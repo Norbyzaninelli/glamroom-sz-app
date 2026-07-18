@@ -271,9 +271,10 @@ export default function App() {
   const [transactions, setTransactions, txLoaded, txErr] = useCloudState("glamroom:transactions", []);
   const [settings, setSettings, settingsLoaded, settingsErr] = useCloudState("glamroom:settings", { adminPin: "1234", staffPin: "0000", paymentLink: "", depositNote: "" });
   const [gallery, setGallery, galleryLoaded, galleryErr] = useCloudState("glamroom:gallery", []);
+  const [fixedExpenses, setFixedExpenses, fixedExpensesLoaded, fixedExpensesErr] = useCloudState("glamroom:fixedExpenses", []);
 
-  const allLoaded = servicesLoaded && employeesLoaded && productsLoaded && apptsLoaded && txLoaded && settingsLoaded && galleryLoaded;
-  const anySaveError = servicesErr || employeesErr || productsErr || apptsErr || txErr || settingsErr || galleryErr;
+  const allLoaded = servicesLoaded && employeesLoaded && productsLoaded && apptsLoaded && txLoaded && settingsLoaded && galleryLoaded && fixedExpensesLoaded;
+  const anySaveError = servicesErr || employeesErr || productsErr || apptsErr || txErr || settingsErr || galleryErr || fixedExpensesErr;
 
   const [view, setView] = useState("cliente"); // 'cliente' | 'panel'
   const [panelRole, setPanelRole] = useState(null); // null | 'admin' | 'staff'
@@ -337,6 +338,7 @@ export default function App() {
             transactions={transactions} setTransactions={setTransactions}
             settings={settings} setSettings={setSettings}
             gallery={gallery} setGallery={setGallery}
+            fixedExpenses={fixedExpenses} setFixedExpenses={setFixedExpenses}
             notify={notify}
           />
         )}
@@ -917,12 +919,15 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
   const [date, setDate] = useState(todayStr());
   const [employeeFilter, setEmployeeFilter] = useState("todas");
   const [showModal, setShowModal] = useState(false);
+  const [viewMode, setViewMode] = useState("lista"); // 'lista' | 'calendario'
+  const [detailApptId, setDetailApptId] = useState(null);
 
   const dayAppts = appointments
     .filter((a) => a.date === date && (employeeFilter === "todas" || a.employeeId === employeeFilter))
     .sort((a, b) => a.time.localeCompare(b.time));
 
   const counts = dayAppts.reduce((acc, a) => { acc[a.status] = (acc[a.status] || 0) + 1; return acc; }, {});
+  const detailAppt = detailApptId ? appointments.find((a) => a.id === detailApptId) || null : null;
 
   const changeStatus = (appt, newStatus) => {
     const updated = appointments.map((a) => (a.id === appt.id ? { ...a, status: newStatus } : a));
@@ -950,6 +955,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
       amount: svc ? svc.price : 0,
       description: svc ? svc.name : "Servicio",
       categoryId: svc ? svc.categoryId : null,
+      serviceId: appt.serviceId,
       employeeId: appt.employeeId, employeeName: emp ? emp.name : "—",
       serviceName: svc ? svc.name : "Servicio",
       appointmentId: appt.id, createdAt: Date.now(),
@@ -1008,6 +1014,10 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
           <option value="todas">Todas las profesionales</option>
           {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
+        <div className="view-toggle" style={{ marginLeft: "auto" }}>
+          <button className={viewMode === "lista" ? "toggle-btn active" : "toggle-btn"} onClick={() => setViewMode("lista")}>Lista</button>
+          <button className={viewMode === "calendario" ? "toggle-btn active" : "toggle-btn"} onClick={() => setViewMode("calendario")}>Calendario</button>
+        </div>
       </div>
 
       <div className="status-strip">
@@ -1018,60 +1028,75 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
         ))}
       </div>
 
-      {dayAppts.length === 0 ? (
-        <EmptyState icon={Calendar} title="Sin turnos para este día" hint="Agregá un turno manual o esperá reservas de clientas." />
+      {viewMode === "lista" ? (
+        dayAppts.length === 0 ? (
+          <EmptyState icon={Calendar} title="Sin turnos para este día" hint="Agregá un turno manual o esperá reservas de clientas." />
+        ) : (
+          <div className="appt-list">
+            {dayAppts.map((a) => {
+              const svc = services.find((s) => s.id === a.serviceId);
+              const emp = employees.find((e) => e.id === a.employeeId);
+              const cat = svc ? categoryById(svc.categoryId) : null;
+              return (
+                <div key={a.id} className="appt-card" style={{ "--cat-color": cat ? cat.color : "#948A7C" }}>
+                  <div className="appt-time">{a.time}</div>
+                  <div className="appt-info">
+                    <div className="appt-main-line">
+                      <strong>{svc ? svc.name : "Servicio eliminado"}</strong>
+                      <span className="status-badge" style={{ "--chip-color": STATUS_COLOR[a.status] }}>{STATUS_LABEL[a.status]}</span>
+                      {a.comboId && <span className="combo-badge">Combo</span>}
+                    </div>
+                    <div className="appt-sub-line">
+                      <Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#948A7C"} size={20} />
+                      {emp ? emp.name : "Sin asignar"} · {a.clientName} {a.clientPhone && `· ${a.clientPhone}`}
+                    </div>
+                  </div>
+                  <ApptActionsRow
+                    a={a} emp={emp} settings={settings}
+                    cyclePaymentStatus={cyclePaymentStatus} changeStatus={changeStatus} removeAppt={removeAppt}
+                    PAYMENT_LABEL={PAYMENT_LABEL}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : (
-        <div className="appt-list">
-          {dayAppts.map((a) => {
-            const svc = services.find((s) => s.id === a.serviceId);
-            const emp = employees.find((e) => e.id === a.employeeId);
-            const cat = svc ? categoryById(svc.categoryId) : null;
-            return (
-              <div key={a.id} className="appt-card" style={{ "--cat-color": cat ? cat.color : "#948A7C" }}>
-                <div className="appt-time">{a.time}</div>
-                <div className="appt-info">
-                  <div className="appt-main-line">
-                    <strong>{svc ? svc.name : "Servicio eliminado"}</strong>
-                    <span className="status-badge" style={{ "--chip-color": STATUS_COLOR[a.status] }}>{STATUS_LABEL[a.status]}</span>
-                    {a.comboId && <span className="combo-badge">Combo</span>}
-                  </div>
-                  <div className="appt-sub-line">
-                    <Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#948A7C"} size={20} />
-                    {emp ? emp.name : "Sin asignar"} · {a.clientName} {a.clientPhone && `· ${a.clientPhone}`}
-                  </div>
-                </div>
-                <div className="appt-actions">
-                  {(emp?.paymentLink || settings?.paymentLink) && (
-                    <a
-                      className="icon-btn"
-                      href={emp?.paymentLink || settings?.paymentLink}
-                      target="_blank" rel="noopener noreferrer"
-                      title={`Link de seña de ${emp ? emp.name : "el local"}`}
-                    >
-                      <CircleDollarSign size={15} />
-                    </a>
-                  )}
-                  <button
-                    className={`payment-chip payment-${a.paymentStatus || "pendiente"}`}
-                    onClick={() => cyclePaymentStatus(a)}
-                    title="Tocar para avanzar el estado de pago"
-                  >
-                    {PAYMENT_LABEL[a.paymentStatus || "pendiente"]}
-                  </button>
-                  {a.status === "pendiente" && <button className="btn btn-tiny btn-primary" onClick={() => changeStatus(a, "confirmado")}>Confirmar</button>}
-                  {(a.status === "pendiente" || a.status === "confirmado") && (
-                    <button className="btn btn-tiny btn-success" onClick={() => changeStatus(a, "completado")}>Completar</button>
-                  )}
-                  {a.status !== "cancelado" && a.status !== "completado" && (
-                    <button className="btn btn-tiny btn-ghost" onClick={() => changeStatus(a, "cancelado")}>Cancelar</button>
-                  )}
-                  <button className="icon-btn" onClick={() => removeAppt(a)}><Trash2 size={15} /></button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DayCalendar
+          appointments={dayAppts}
+          employees={employeeFilter === "todas" ? employees : employees.filter((e) => e.id === employeeFilter)}
+          services={services}
+          onSelectAppt={(a) => setDetailApptId(a.id)}
+        />
       )}
+
+      <Modal open={!!detailAppt} onClose={() => setDetailApptId(null)} title="Detalle del turno">
+        {detailAppt && (() => {
+          const svc = services.find((s) => s.id === detailAppt.serviceId);
+          const emp = employees.find((e) => e.id === detailAppt.employeeId);
+          const cat = svc ? categoryById(svc.categoryId) : null;
+          return (
+            <div className="form-stack">
+              <div className="summary-box">
+                <div>
+                  <span className="bulb" style={{ "--bulb-color": cat ? cat.color : "#948A7C", width: 10, height: 10 }} />
+                  {svc ? svc.name : "Servicio eliminado"}
+                </div>
+                <div><Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#948A7C"} size={18} /> {emp ? emp.name : "Sin asignar"}</div>
+                <div><Calendar size={14} /> {formatDateHuman(detailAppt.date)} · {detailAppt.time} hs</div>
+                <div><User size={14} /> {detailAppt.clientName} {detailAppt.clientPhone && `· ${detailAppt.clientPhone}`}</div>
+              </div>
+              {detailAppt.comboId && <span className="combo-badge">Combo</span>}
+              <ApptActionsRow
+                a={detailAppt} emp={emp} settings={settings}
+                cyclePaymentStatus={cyclePaymentStatus} changeStatus={changeStatus}
+                removeAppt={(appt) => { removeAppt(appt); setDetailApptId(null); }}
+                PAYMENT_LABEL={PAYMENT_LABEL}
+              />
+            </div>
+          );
+        })()}
+      </Modal>
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nuevo turno manual">
         <ManualApptForm
@@ -1085,6 +1110,102 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
           }}
         />
       </Modal>
+    </div>
+  );
+}
+
+function ApptActionsRow({ a, emp, settings, cyclePaymentStatus, changeStatus, removeAppt, PAYMENT_LABEL }) {
+  return (
+    <div className="appt-actions">
+      {(emp?.paymentLink || settings?.paymentLink) && (
+        <a
+          className="icon-btn"
+          href={emp?.paymentLink || settings?.paymentLink}
+          target="_blank" rel="noopener noreferrer"
+          title={`Link de seña de ${emp ? emp.name : "el local"}`}
+        >
+          <CircleDollarSign size={15} />
+        </a>
+      )}
+      <button
+        className={`payment-chip payment-${a.paymentStatus || "pendiente"}`}
+        onClick={() => cyclePaymentStatus(a)}
+        title="Tocar para avanzar el estado de pago"
+      >
+        {PAYMENT_LABEL[a.paymentStatus || "pendiente"]}
+      </button>
+      {a.status === "pendiente" && <button className="btn btn-tiny btn-primary" onClick={() => changeStatus(a, "confirmado")}>Confirmar</button>}
+      {(a.status === "pendiente" || a.status === "confirmado") && (
+        <button className="btn btn-tiny btn-success" onClick={() => changeStatus(a, "completado")}>Completar</button>
+      )}
+      {a.status !== "cancelado" && a.status !== "completado" && (
+        <button className="btn btn-tiny btn-ghost" onClick={() => changeStatus(a, "cancelado")}>Cancelar</button>
+      )}
+      <button className="icon-btn" onClick={() => removeAppt(a)}><Trash2 size={15} /></button>
+    </div>
+  );
+}
+
+// Calendario tipo agenda: una columna por profesional, con los turnos
+// posicionados como bloques según su horario real. Así se ve de un
+// vistazo qué espacios del día ya están ocupados.
+function DayCalendar({ appointments, employees, services, onSelectAppt }) {
+  const totalMinutes = SALON_CLOSE - SALON_OPEN;
+  const hourMarks = [];
+  for (let t = SALON_OPEN; t <= SALON_CLOSE; t += 60) hourMarks.push(t);
+
+  if (employees.length === 0) {
+    return <EmptyState icon={Users} title="Sin profesionales para mostrar" hint="Elegí otro filtro o cargá profesionales en Servicios y equipo." />;
+  }
+
+  return (
+    <div className="day-calendar">
+      <div className="day-calendar-ruler">
+        {hourMarks.map((t) => (
+          <span key={t} className="day-calendar-ruler-mark" style={{ top: `${((t - SALON_OPEN) / totalMinutes) * 100}%` }}>
+            {minutesToHHMM(t)}
+          </span>
+        ))}
+      </div>
+      <div className="day-calendar-columns">
+        {employees.map((emp) => {
+          const empAppts = appointments.filter((a) => a.employeeId === emp.id && a.status !== "cancelado");
+          return (
+            <div key={emp.id} className="day-calendar-col">
+              <div className="day-calendar-col-header">
+                <Avatar name={emp.name} color={emp.color} size={20} />
+                <span>{emp.name}</span>
+              </div>
+              <div className="day-calendar-col-body">
+                {hourMarks.map((t) => (
+                  <div key={t} className="day-calendar-gridline" style={{ top: `${((t - SALON_OPEN) / totalMinutes) * 100}%` }} />
+                ))}
+                {empAppts.length === 0 && <span className="day-calendar-empty">Sin turnos</span>}
+                {empAppts.map((a) => {
+                  const svc = services.find((s) => s.id === a.serviceId);
+                  const dur = svc ? svc.duration : 30;
+                  const start = hhmmToMinutes(a.time);
+                  const top = ((start - SALON_OPEN) / totalMinutes) * 100;
+                  const height = (dur / totalMinutes) * 100;
+                  const cat = svc ? categoryById(svc.categoryId) : null;
+                  return (
+                    <button
+                      key={a.id}
+                      className={`day-calendar-block status-${a.status}`}
+                      style={{ top: `${top}%`, height: `${height}%`, "--block-color": cat ? cat.color : "#948A7C" }}
+                      onClick={() => onSelectAppt(a)}
+                      title={`${a.time} · ${svc ? svc.name : "Servicio"} · ${a.clientName}`}
+                    >
+                      <span className="day-calendar-block-time">{a.time}</span>
+                      <span className="day-calendar-block-title">{svc ? svc.name : "Servicio"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1174,7 +1295,7 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
 
 /* --------------------------- Finanzas tab --------------------------- */
 
-function FinanzasTab({ products, setProducts, transactions, setTransactions, employees, notify }) {
+function FinanzasTab({ products, setProducts, transactions, setTransactions, employees, services, fixedExpenses, setFixedExpenses, notify }) {
   const [period, setPeriod] = useState("mes");
   const [customStart, setCustomStart] = useState(addDays(todayStr(), -7));
   const [customEnd, setCustomEnd] = useState(todayStr());
@@ -1352,6 +1473,15 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
         )}
       </div>
 
+      <BreakEvenSection
+        services={services}
+        fixedExpenses={fixedExpenses}
+        setFixedExpenses={setFixedExpenses}
+        transactions={transactions}
+        setTransactions={setTransactions}
+        notify={notify}
+      />
+
       <Modal open={modal === "ingreso"} onClose={() => setModal(null)} title="Registrar ingreso manual">
         <ManualTxForm type="ingreso_servicio" onSave={(tx) => { setTransactions([...transactions, tx]); setModal(null); notify("Ingreso registrado"); }} />
       </Modal>
@@ -1466,6 +1596,145 @@ function SaleForm({ products, onSave }) {
         }}
       >
         Registrar venta
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------- Gastos fijos y punto de equilibrio --------------------------- */
+
+function BreakEvenSection({ services, fixedExpenses, setFixedExpenses, transactions, setTransactions, notify }) {
+  const [modal, setModal] = useState(null);
+
+  const totalFixed = fixedExpenses.reduce((s, fe) => s + fe.amount, 0);
+  const monthKey = todayStr().slice(0, 7);
+  const monthStart = monthKey + "-01";
+  const registeredIds = new Set(
+    transactions.filter((t) => t.fixedExpenseId && t.periodMonth === monthKey).map((t) => t.fixedExpenseId)
+  );
+  const pendingCount = fixedExpenses.filter((fe) => !registeredIds.has(fe.id)).length;
+
+  const registerThisMonth = () => {
+    const toAdd = fixedExpenses
+      .filter((fe) => !registeredIds.has(fe.id))
+      .map((fe) => ({
+        id: uid(), type: "egreso", date: todayStr(), amount: fe.amount,
+        description: `${fe.category}: ${fe.name}`, categoryName: fe.category,
+        fixedExpenseId: fe.id, periodMonth: monthKey, createdAt: Date.now(),
+      }));
+    if (toAdd.length === 0) { notify("Ya estaban todos registrados este mes"); return; }
+    setTransactions([...transactions, ...toAdd]);
+    notify(`${toAdd.length} gasto(s) fijo(s) registrados en Finanzas`);
+  };
+
+  const removeFixed = (fe) => {
+    setFixedExpenses(fixedExpenses.filter((x) => x.id !== fe.id));
+    notify("Gasto fijo eliminado");
+  };
+
+  const breakEvenRows = services
+    .filter((s) => s.price > 0)
+    .map((s) => {
+      const needed = totalFixed > 0 ? Math.ceil(totalFixed / s.price) : 0;
+      const done = transactions.filter(
+        (t) => t.type === "ingreso_servicio" && t.serviceId === s.id && t.date >= monthStart
+      ).length;
+      const pct = needed > 0 ? Math.min(100, Math.round((done / needed) * 100)) : 0;
+      return { service: s, needed, done, pct };
+    })
+    .sort((a, b) => a.needed - b.needed);
+
+  return (
+    <div className="card">
+      <div className="tab-header-row">
+        <h4>Gastos fijos y punto de equilibrio</h4>
+        <button className="btn btn-tiny" onClick={() => setModal("new")}><Plus size={14} /> Gasto fijo</button>
+      </div>
+      <p className="muted small" style={{ marginTop: -6 }}>
+        Cargá acá tus costos que se repiten todos los meses (alquiler, sueldos, servicios) para calcular
+        cuántos turnos de cada servicio necesitás para cubrirlos.
+      </p>
+
+      {fixedExpenses.length === 0 ? (
+        <EmptyState icon={Wallet} title="Sin gastos fijos cargados" hint="Agregá el alquiler, sueldos u otros costos mensuales." />
+      ) : (
+        <>
+          <div className="list-simple">
+            {fixedExpenses.map((fe) => (
+              <div key={fe.id} className="list-row">
+                <span className="list-row-main">{fe.name}</span>
+                <span className="muted small">{fe.category}</span>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13 }}>{formatMoney(fe.amount)}</span>
+                {registeredIds.has(fe.id) && (
+                  <span className="admin-badge" style={{ color: "var(--money-pos)", borderColor: "var(--money-pos)" }}>
+                    Este mes ✓
+                  </span>
+                )}
+                <button className="icon-btn" onClick={() => removeFixed(fe)}><Trash2 size={14} /></button>
+              </div>
+            ))}
+          </div>
+
+          <div className="tab-header-row" style={{ marginTop: 12 }}>
+            <span style={{ fontWeight: 600 }}>Total fijo mensual: {formatMoney(totalFixed)}</span>
+            <button className="btn btn-tiny" onClick={registerThisMonth} disabled={pendingCount === 0}>
+              {pendingCount === 0 ? "Ya cargados este mes" : `Registrar ${pendingCount} en Finanzas`}
+            </button>
+          </div>
+
+          {breakEvenRows.length > 0 && (
+            <div className="breakeven-table" style={{ marginTop: 16 }}>
+              {breakEvenRows.map((row) => (
+                <div key={row.service.id} className="breakeven-row">
+                  <div className="breakeven-name">
+                    <span className="bulb" style={{ "--bulb-color": categoryById(row.service.categoryId)?.color, width: 9, height: 9 }} />
+                    {row.service.name}
+                  </div>
+                  <div className="breakeven-bar-track">
+                    <div className="breakeven-bar-fill" style={{ width: `${row.pct}%` }} />
+                  </div>
+                  <div className="breakeven-count">{row.done} / {row.needed} turnos</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {breakEvenRows.length === 0 && (
+            <p className="muted small" style={{ marginTop: 12 }}>
+              Cargá precios reales en tus servicios (Servicios y equipo) para ver el cálculo por servicio.
+            </p>
+          )}
+        </>
+      )}
+
+      <Modal open={modal === "new"} onClose={() => setModal(null)} title="Nuevo gasto fijo">
+        <FixedExpenseForm
+          onSave={(fe) => { setFixedExpenses([...fixedExpenses, { ...fe, id: uid() }]); setModal(null); notify("Gasto fijo agregado"); }}
+        />
+      </Modal>
+    </div>
+  );
+}
+
+function FixedExpenseForm({ onSave }) {
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
+  const [amount, setAmount] = useState("");
+  return (
+    <div className="form-stack">
+      <label className="field-label">Nombre</label>
+      <input className="text-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Alquiler del local" />
+      <label className="field-label">Categoría</label>
+      <select className="select-input" value={category} onChange={(e) => setCategory(e.target.value)}>
+        {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <label className="field-label">Monto mensual</label>
+      <input className="text-input" type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+      <button
+        className="btn btn-primary"
+        disabled={!name.trim() || !amount || Number(amount) <= 0}
+        onClick={() => onSave({ name: name.trim(), category, amount: Number(amount) })}
+      >
+        Guardar gasto fijo
       </button>
     </div>
   );
@@ -2106,6 +2375,41 @@ function GlobalStyle() {
       .appt-sub-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
       .appt-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+      .day-calendar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+      .day-calendar-ruler { flex: 0 0 40px; position: relative; height: 640px; margin-top: 34px; }
+      .day-calendar-ruler-mark {
+        position: absolute; font-size: 10.5px; color: var(--muted); transform: translateY(-50%);
+        font-family: 'IBM Plex Mono', monospace;
+      }
+      .day-calendar-columns { display: flex; gap: 8px; flex: 1; min-width: 0; }
+      .day-calendar-col { flex: 0 0 160px; min-width: 160px; }
+      .day-calendar-col-header {
+        display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; height: 26px;
+        margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .day-calendar-col-body {
+        position: relative; height: 640px; background: var(--surface); border: 1px solid var(--border);
+        border-radius: 10px; overflow: hidden;
+      }
+      .day-calendar-gridline { position: absolute; left: 0; right: 0; height: 1px; background: var(--border); opacity: 0.7; }
+      .day-calendar-empty {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 11.5px; color: var(--muted);
+      }
+      .day-calendar-block {
+        position: absolute; left: 4px; right: 4px; min-height: 26px; border-radius: 6px;
+        background: color-mix(in srgb, var(--block-color) 20%, white); border-left: 3px solid var(--block-color);
+        padding: 3px 6px; text-align: left; cursor: pointer; overflow: hidden; display: flex;
+        flex-direction: column; gap: 1px; font-family: 'Work Sans', sans-serif;
+      }
+      .day-calendar-block.status-cancelado { opacity: 0.45; text-decoration: line-through; }
+      .day-calendar-block.status-completado { background: color-mix(in srgb, var(--block-color) 32%, white); }
+      .day-calendar-block-time { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; color: var(--ink); }
+      .day-calendar-block-title { font-size: 11px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      @media (max-width: 600px) {
+        .day-calendar-col { flex: 0 0 130px; min-width: 130px; }
+      }
+
       .period-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
       .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
       .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
@@ -2153,6 +2457,16 @@ function GlobalStyle() {
       .gallery-dot.active { background: #FFFFFF; width: 16px; border-radius: 3px; transition: width 0.3s ease; }
 
       .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; margin-top: 12px; }
+
+      .breakeven-row { display: grid; grid-template-columns: 1fr 110px 90px; align-items: center; gap: 10px; padding: 6px 0; }
+      .breakeven-name { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+      .breakeven-bar-track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+      .breakeven-bar-fill { height: 100%; background: var(--sage); border-radius: 3px; transition: width 0.3s ease; }
+      .breakeven-count { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--muted); text-align: right; white-space: nowrap; }
+      @media (max-width: 480px) {
+        .breakeven-row { grid-template-columns: 1fr 70px; }
+        .breakeven-count { grid-column: 1 / -1; text-align: left; }
+      }
       .gallery-thumb { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
       .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .gallery-thumb-remove {
