@@ -15,12 +15,12 @@ import { supabase } from "./supabaseClient.js";
 /* ---------------------------------------------------------------------- */
 
 const CATEGORIES = [
-  { id: "facial", name: "Facial", color: "#6F8F6B" },
-  { id: "manos_pies", name: "Manos y pies", color: "#C17B79" },
-  { id: "pestanas", name: "Pestañas y cejas", color: "#C9A24C" },
-  { id: "corporal", name: "Corporal", color: "#8B5E83" },
-  { id: "social", name: "Social", color: "#B79B7D" },
-  { id: "otros", name: "Otros", color: "#7C93A8" },
+  { id: "facial", name: "Facial", color: "#6E9179" },
+  { id: "manos_pies", name: "Manos y pies", color: "#B97A5D" },
+  { id: "pestanas", name: "Pestañas y cejas", color: "#C29A47" },
+  { id: "corporal", name: "Corporal", color: "#8779AD" },
+  { id: "social", name: "Social", color: "#5C8B9C" },
+  { id: "otros", name: "Otros", color: "#948A7C" },
 ];
 
 // Catálogo real de servicios de The Glam Room SZ (relevado de la lista provista).
@@ -64,7 +64,7 @@ const SEED_SERVICES = [
   { name: "Glitter", categoryId: "social", duration: 15, price: 0 },
 ];
 
-const EMPLOYEE_COLORS = ["#C17B79", "#C9A24C", "#8B5E83", "#6F8F6B", "#B79B7D", "#A13E4B", "#7C93A8"];
+const EMPLOYEE_COLORS = ["#6E9179", "#B97A5D", "#C29A47", "#8779AD", "#5C8B9C", "#948A7C", "#4F7A63"];
 
 const EXPENSE_CATEGORIES = ["Alquiler", "Insumos", "Sueldos", "Servicios (luz/agua/internet)", "Marketing", "Otros"];
 
@@ -81,10 +81,10 @@ const STATUS_LABEL = {
 };
 
 const STATUS_COLOR = {
-  pendiente: "#C9A24C",
-  confirmado: "#7C93A8",
-  completado: "#6F8F6B",
-  cancelado: "#8A7A85",
+  pendiente: "#C29A47",
+  confirmado: "#5C8B9C",
+  completado: "#6E9179",
+  cancelado: "#A79A8D",
 };
 
 /* ---------------------------------------------------------------------- */
@@ -482,7 +482,7 @@ function ServiceAccordion({ services, selectedId, onSelect, excludeId }) {
             <button className="accordion-header" onClick={() => setOpenCat(isOpen ? null : cat.id)}>
               <span className="bulb" style={{ "--bulb-color": cat.color, width: 10, height: 10 }} />
               <span className="accordion-title">{cat.name}</span>
-              {hasSelection && !isOpen && <Check size={14} color="var(--gold)" />}
+              {hasSelection && !isOpen && <Check size={14} color="var(--sage)" />}
               <ChevronDown size={16} className={`accordion-chevron ${isOpen ? "open" : ""}`} />
             </button>
             {isOpen && (
@@ -565,9 +565,14 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
   }
 
   if (done) {
+    const link1 = employee?.paymentLink || settings?.paymentLink || "";
+    const link2 = service2 ? (employee2?.paymentLink || settings?.paymentLink || "") : "";
+    const showTwoLinks = link1 && link2 && link1 !== link2;
+    const singleLink = link1 || link2;
+
     return (
       <div className="card center-card">
-        <CalendarCheck size={30} color="var(--gold)" />
+        <CalendarCheck size={30} color="var(--sage)" />
         <h2>¡Turno solicitado!</h2>
         <p className="muted">
           Pediste <strong>{service.name}</strong> con <strong>{employee.name}</strong> el{" "}
@@ -577,14 +582,23 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
           )}{" "}
           El local te confirma el turno a la brevedad.
         </p>
-        {settings?.paymentLink && (
+        {settings?.depositNote && (link1 || link2) && <p className="muted small">{settings.depositNote}</p>}
+        {showTwoLinks ? (
           <div className="deposit-box">
-            {settings.depositNote && <p className="muted small">{settings.depositNote}</p>}
-            <a className="btn btn-primary" href={settings.paymentLink} target="_blank" rel="noopener noreferrer">
+            <a className="btn btn-primary" href={link1} target="_blank" rel="noopener noreferrer">
+              <CircleDollarSign size={16} /> Pagar seña a {employee.name}
+            </a>
+            <a className="btn btn-primary" href={link2} target="_blank" rel="noopener noreferrer">
+              <CircleDollarSign size={16} /> Pagar seña a {employee2.name}
+            </a>
+          </div>
+        ) : singleLink ? (
+          <div className="deposit-box">
+            <a className="btn btn-primary" href={singleLink} target="_blank" rel="noopener noreferrer">
               <CircleDollarSign size={16} /> Pagar seña ahora
             </a>
           </div>
-        )}
+        ) : null}
         <button className="btn btn-ghost" onClick={reset}>Reservar otro turno</button>
       </div>
     );
@@ -938,7 +952,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
         <div className="finance-actions">
           {settings?.paymentLink && (
             <a className="btn btn-tiny" href={settings.paymentLink} target="_blank" rel="noopener noreferrer">
-              <CircleDollarSign size={14} /> Link de seña
+              <CircleDollarSign size={14} /> Link general de seña
             </a>
           )}
           <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} /> Turno manual</button>
@@ -976,7 +990,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
             const emp = employees.find((e) => e.id === a.employeeId);
             const cat = svc ? categoryById(svc.categoryId) : null;
             return (
-              <div key={a.id} className="appt-card" style={{ "--cat-color": cat ? cat.color : "#8A7A85" }}>
+              <div key={a.id} className="appt-card" style={{ "--cat-color": cat ? cat.color : "#948A7C" }}>
                 <div className="appt-time">{a.time}</div>
                 <div className="appt-info">
                   <div className="appt-main-line">
@@ -985,11 +999,21 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
                     {a.comboId && <span className="combo-badge">Combo</span>}
                   </div>
                   <div className="appt-sub-line">
-                    <Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#8A7A85"} size={20} />
+                    <Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#948A7C"} size={20} />
                     {emp ? emp.name : "Sin asignar"} · {a.clientName} {a.clientPhone && `· ${a.clientPhone}`}
                   </div>
                 </div>
                 <div className="appt-actions">
+                  {(emp?.paymentLink || settings?.paymentLink) && (
+                    <a
+                      className="icon-btn"
+                      href={emp?.paymentLink || settings?.paymentLink}
+                      target="_blank" rel="noopener noreferrer"
+                      title={`Link de seña de ${emp ? emp.name : "el local"}`}
+                    >
+                      <CircleDollarSign size={15} />
+                    </a>
+                  )}
                   <button
                     className={`payment-chip payment-${a.paymentStatus || "pendiente"}`}
                     onClick={() => cyclePaymentStatus(a)}
@@ -1222,11 +1246,11 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={byCategory} layout="vertical" margin={{ left: 10, right: 20 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={110} tick={{ fill: "var(--ivory)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#2C2230", border: "1px solid #3A2E3C", borderRadius: 8, color: "#F4EBE0" }} />
+                <YAxis type="category" dataKey="name" width={110} tick={{ fill: "var(--ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#FFFFFF", border: "1px solid #E6DFD4", borderRadius: 8, color: "#3A3530" }} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                   {byCategory.map((c, i) => <Cell key={i} fill={c.color} />)}
-                  <LabelList dataKey="value" position="right" formatter={(v) => formatMoney(v)} fill="#F4EBE0" fontSize={11} />
+                  <LabelList dataKey="value" position="right" formatter={(v) => formatMoney(v)} fill="#3A3530" fontSize={11} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -1241,11 +1265,11 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={byEmployee} layout="vertical" margin={{ left: 10, right: 20 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={90} tick={{ fill: "var(--ivory)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#2C2230", border: "1px solid #3A2E3C", borderRadius: 8, color: "#F4EBE0" }} />
+                <YAxis type="category" dataKey="name" width={90} tick={{ fill: "var(--ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#FFFFFF", border: "1px solid #E6DFD4", borderRadius: 8, color: "#3A3530" }} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                   {byEmployee.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  <LabelList dataKey="value" position="right" formatter={(v) => formatMoney(v)} fill="#F4EBE0" fontSize={11} />
+                  <LabelList dataKey="value" position="right" formatter={(v) => formatMoney(v)} fill="#3A3530" fontSize={11} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -1257,13 +1281,13 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
         <h4>Evolución últimos 6 meses</h4>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={last6Months} margin={{ left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#3A2E3C" vertical={false} />
-            <XAxis dataKey="mes" tick={{ fill: "var(--ivory)", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "var(--ivory)", fontSize: 11 }} axisLine={false} tickLine={false} width={70}
+            <CartesianGrid strokeDasharray="3 3" stroke="#E6DFD4" vertical={false} />
+            <XAxis dataKey="mes" tick={{ fill: "var(--ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "var(--ink)", fontSize: 11 }} axisLine={false} tickLine={false} width={70}
               tickFormatter={(v) => new Intl.NumberFormat("es-AR", { notation: "compact" }).format(v)} />
-            <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#2C2230", border: "1px solid #3A2E3C", borderRadius: 8, color: "#F4EBE0" }} />
-            <Bar dataKey="Ingresos" fill="#6F8F6B" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Egresos" fill="#A13E4B" radius={[4, 4, 0, 0]} />
+            <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#FFFFFF", border: "1px solid #E6DFD4", borderRadius: 8, color: "#3A3530" }} />
+            <Bar dataKey="Ingresos" fill="#5C8268" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Egresos" fill="#B4574A" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -1551,6 +1575,7 @@ function EmployeeForm({ services, initial, onSave }) {
   const [color, setColor] = useState(initial?.color || EMPLOYEE_COLORS[0]);
   const [serviceIds, setServiceIds] = useState(initial?.serviceIds || []);
   const [isAdmin, setIsAdmin] = useState(initial?.isAdmin || false);
+  const [paymentLink, setPaymentLink] = useState(initial?.paymentLink || "");
 
   const toggleService = (id) => {
     setServiceIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -1593,6 +1618,17 @@ function EmployeeForm({ services, initial, onSave }) {
         </div>
       )}
 
+      <label className="field-label" style={{ marginTop: 8 }}>Link de pago de seña (propio de esta profesional)</label>
+      <input
+        className="text-input"
+        value={paymentLink}
+        onChange={(e) => setPaymentLink(e.target.value)}
+        placeholder="https://mpago.la/... (opcional)"
+      />
+      <span className="muted small">
+        Si lo dejás vacío, se usa el link general del local (Panel → Ajustes) cuando corresponda.
+      </span>
+
       <label className="checkbox-row" style={{ marginTop: 8 }}>
         <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />
         Rol de administradora (acceso completo al panel, incluida Finanzas)
@@ -1601,7 +1637,7 @@ function EmployeeForm({ services, initial, onSave }) {
       <button
         className="btn btn-primary"
         disabled={!name.trim()}
-        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin })}
+        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin, paymentLink: paymentLink.trim() })}
       >
         Guardar profesional
       </button>
@@ -1752,19 +1788,19 @@ function GlobalStyle() {
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
       .glam-root {
-        --bg: #1F1620;
-        --surface: #2C2230;
-        --surface-2: #34272F;
-        --border: #3A2E3C;
-        --ivory: #F4EBE0;
-        --gold: #C9A24C;
-        --rose: #C17B79;
-        --money-pos: #6F8F6B;
-        --money-neg: #A13E4B;
-        --muted: #B6A7AE;
+        --bg: #FBF8F4;
+        --surface: #FFFFFF;
+        --surface-2: #F2EEE7;
+        --border: #E6DFD4;
+        --ink: #3A3530;
+        --sage: #6E9179;
+        --clay: #C68A6E;
+        --money-pos: #5C8268;
+        --money-neg: #B4574A;
+        --muted: #8B8175;
 
         background: var(--bg);
-        color: var(--ivory);
+        color: var(--ink);
         font-family: 'Work Sans', sans-serif;
         min-height: 100vh;
         width: 100%;
@@ -1773,7 +1809,7 @@ function GlobalStyle() {
       .glam-root * { box-sizing: border-box; }
 
       .loading-root { display: flex; align-items: center; justify-content: center; min-height: 300px; }
-      .loading-box { display: flex; align-items: center; gap: 10px; color: var(--gold); font-family: 'Fraunces', serif; font-size: 18px; }
+      .loading-box { display: flex; align-items: center; gap: 10px; color: var(--sage); font-family: 'Fraunces', serif; font-size: 18px; }
       .spin-slow { animation: spin 2.2s linear infinite; }
       @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1783,7 +1819,7 @@ function GlobalStyle() {
         flex-wrap: wrap; gap: 12px;
       }
       .brand { display: flex; align-items: center; gap: 10px; }
-      .brand-mark { color: var(--gold); font-size: 20px; }
+      .brand-mark { color: var(--sage); font-size: 20px; }
       .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
       .brand-name { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; letter-spacing: 0.2px; }
       .brand-sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
@@ -1793,7 +1829,7 @@ function GlobalStyle() {
         border: none; background: transparent; color: var(--muted); padding: 8px 16px; border-radius: 999px;
         font-family: 'Work Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s;
       }
-      .toggle-btn.active { background: var(--gold); color: #221822; }
+      .toggle-btn.active { background: var(--sage); color: #FFFFFF; }
 
       .main-area { padding: 20px 22px 60px; max-width: 1100px; margin: 0 auto; }
 
@@ -1802,17 +1838,15 @@ function GlobalStyle() {
       .bulb-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
       .bulb {
         width: 12px; height: 12px; border-radius: 50%; display: inline-block;
-        background: var(--bulb-color); box-shadow: 0 0 8px var(--bulb-color);
-        animation: glow 2.4s ease-in-out infinite;
+        background: var(--bulb-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bulb-color) 18%, transparent);
       }
-      @media (prefers-reduced-motion: reduce) { .bulb { animation: none; } .spin-slow { animation: none; } }
-      @keyframes glow { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .spin-slow { animation: none; } }
       .bulb-label { white-space: nowrap; }
 
       /* Cards */
       .card {
-        background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-        padding: 18px 20px; margin-bottom: 16px;
+        background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+        padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 14px rgba(58, 53, 48, 0.05);
       }
       .center-card { max-width: 460px; margin: 40px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .card h2, .card h3, .card h4 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 12px; }
@@ -1827,21 +1861,21 @@ function GlobalStyle() {
       }
       .btn:disabled { opacity: 0.4; cursor: not-allowed; }
       .btn:not(:disabled):active { transform: scale(0.97); }
-      .btn-primary { background: var(--gold); color: #221822; }
+      .btn-primary { background: var(--sage); color: #FFFFFF; }
       .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-      .btn-success { background: var(--money-pos); color: #10160F; }
-      .btn-tiny { padding: 6px 12px; font-size: 12.5px; background: var(--surface-2); color: var(--ivory); border: 1px solid var(--border); }
+      .btn-success { background: var(--money-pos); color: #FFFFFF; }
+      .btn-tiny { padding: 6px 12px; font-size: 12.5px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); }
       .icon-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 8px; display: inline-flex; }
-      .icon-btn:hover { background: var(--surface-2); color: var(--ivory); }
-      .link-btn { background: none; border: none; color: var(--gold); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
+      .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+      .link-btn { background: none; border: none; color: var(--sage); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
 
       /* PIN gate */
-      .pin-gate { max-width: 320px; margin: 60px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--gold); }
-      .pin-gate h2 { font-family: 'Fraunces', serif; color: var(--ivory); margin: 4px 0 0; }
+      .pin-gate { max-width: 320px; margin: 60px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--sage); }
+      .pin-gate h2 { font-family: 'Fraunces', serif; color: var(--ink); margin: 4px 0 0; }
       .pin-gate p { color: var(--muted); font-size: 13px; margin: 0; }
       .pin-input {
         font-family: 'IBM Plex Mono', monospace; font-size: 22px; letter-spacing: 6px; text-align: center;
-        background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; color: var(--ivory); width: 140px;
+        background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; color: var(--ink); width: 140px;
       }
       .pin-error { color: var(--money-neg); font-size: 12px; }
       .pin-hint { color: var(--muted); font-size: 11px; margin-top: 6px; }
@@ -1850,13 +1884,13 @@ function GlobalStyle() {
       .booking-wizard { max-width: 640px; margin: 0 auto; }
       .wizard-steps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
       .wizard-step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-      .wizard-step.active { color: var(--ivory); }
+      .wizard-step.active { color: var(--ink); }
       .wizard-step-num {
         width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center;
         justify-content: center; font-size: 11px; border: 1px solid var(--border);
       }
-      .wizard-step.active .wizard-step-num { background: var(--gold); color: #221822; border-color: var(--gold); }
-      .wizard-step.done .wizard-step-num { background: var(--money-pos); color: #10160F; border-color: var(--money-pos); }
+      .wizard-step.active .wizard-step-num { background: var(--sage); color: #FFFFFF; border-color: var(--sage); }
+      .wizard-step.done .wizard-step-num { background: var(--money-pos); color: #FFFFFF; border-color: var(--money-pos); }
       .wizard-actions { display: flex; justify-content: space-between; margin-top: 16px; }
 
       
@@ -1864,10 +1898,10 @@ function GlobalStyle() {
       .accordion-item {
         background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
       }
-      .accordion-item.has-selection { border-color: var(--gold); }
+      .accordion-item.has-selection { border-color: var(--sage); }
       .accordion-header {
         width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: none;
-        color: var(--ivory); padding: 13px 14px; cursor: pointer; font-family: 'Work Sans', sans-serif; font-size: 14px; text-align: left;
+        color: var(--ink); padding: 13px 14px; cursor: pointer; font-family: 'Work Sans', sans-serif; font-size: 14px; text-align: left;
       }
       .accordion-title { flex: 1; font-weight: 500; }
       .accordion-chevron { color: var(--muted); transition: transform 0.15s; flex-shrink: 0; }
@@ -1876,27 +1910,27 @@ function GlobalStyle() {
       .service-row {
         display: flex; justify-content: space-between; align-items: center; text-align: left;
         background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 11px 14px;
-        color: var(--ivory); cursor: pointer; font-family: 'Work Sans', sans-serif; font-size: 13.5px;
+        color: var(--ink); cursor: pointer; font-family: 'Work Sans', sans-serif; font-size: 13.5px;
       }
       .service-row:last-child { border-bottom: none; }
-      .service-row.selected { background: #3A2E22; color: var(--gold); }
+      .service-row.selected { background: #E8EFE9; color: var(--sage); }
       .service-row .service-meta { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
-      .service-row.selected .service-meta { color: var(--gold); opacity: 0.8; }
+      .service-row.selected .service-meta { color: var(--sage); opacity: 0.8; }
 
       .employee-grid { display: flex; flex-wrap: wrap; gap: 10px; }
       .employee-option {
         display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--surface-2);
-        border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: var(--ivory); cursor: pointer; min-width: 90px;
+        border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: var(--ink); cursor: pointer; min-width: 90px;
       }
-      .employee-option.selected { border-color: var(--gold); background: #3A2E22; }
+      .employee-option.selected { border-color: var(--sage); background: #E8EFE9; }
 
       .avatar {
         border-radius: 50%; background: var(--avatar-color); display: inline-flex; align-items: center; justify-content: center;
-        font-weight: 700; color: #1B1418; font-family: 'Work Sans', sans-serif; flex-shrink: 0;
+        font-weight: 700; color: #FFFFFF; font-family: 'Work Sans', sans-serif; flex-shrink: 0;
       }
 
       .date-input, .text-input, .select-input {
-        background: var(--surface-2); border: 1px solid var(--border); color: var(--ivory); border-radius: 8px;
+        background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 8px;
         padding: 9px 11px; font-size: 14px; font-family: 'Work Sans', sans-serif; width: 100%;
       }
       .date-input { width: auto; }
@@ -1905,10 +1939,10 @@ function GlobalStyle() {
 
       .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 8px; }
       .slot-btn {
-        background: var(--surface-2); border: 1px solid var(--border); color: var(--ivory); border-radius: 8px;
+        background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 8px;
         padding: 8px 4px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; cursor: pointer;
       }
-      .slot-btn.selected { border-color: var(--gold); background: #3A2E22; color: var(--gold); }
+      .slot-btn.selected { border-color: var(--sage); background: #E8EFE9; color: var(--sage); }
 
       .summary-box { display: flex; flex-direction: column; gap: 6px; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-size: 13.5px; }
       .summary-box div { display: flex; align-items: center; gap: 8px; }
@@ -1920,15 +1954,15 @@ function GlobalStyle() {
         display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; border: none;
         color: var(--muted); padding: 10px 12px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-family: 'Work Sans', sans-serif;
       }
-      .tab-btn.active { background: var(--surface-2); color: var(--ivory); }
-      .tab-btn:hover:not(.active) { background: #2A222C; }
+      .tab-btn.active { background: var(--surface-2); color: var(--ink); }
+      .tab-btn:hover:not(.active) { background: #F2EEE7; }
       .panel-content { flex: 1; min-width: 280px; }
       .role-badge {
         margin-top: 6px; font-size: 10.5px; text-align: center; color: var(--muted); border: 1px dashed var(--border);
         border-radius: 8px; padding: 6px 8px;
       }
       .admin-badge {
-        font-size: 10px; color: var(--gold); border: 1px solid var(--gold); border-radius: 999px;
+        font-size: 10px; color: var(--sage); border: 1px solid var(--sage); border-radius: 999px;
         padding: 1px 8px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.4px;
       }
 
@@ -1952,9 +1986,9 @@ function GlobalStyle() {
         font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
         font-family: 'Work Sans', sans-serif; font-weight: 600;
       }
-      .payment-chip.payment-pendiente { background: rgba(182, 167, 174, 0.14); color: var(--muted); border-color: var(--muted); }
-      .payment-chip.payment-sena { background: rgba(201, 162, 76, 0.14); color: var(--gold); border-color: var(--gold); }
-      .payment-chip.payment-completo { background: rgba(111, 143, 107, 0.18); color: var(--money-pos); border-color: var(--money-pos); }
+      .payment-chip.payment-pendiente { background: rgba(139, 129, 117, 0.14); color: var(--muted); border-color: var(--muted); }
+      .payment-chip.payment-sena { background: rgba(198, 138, 110, 0.16); color: var(--clay); border-color: var(--clay); }
+      .payment-chip.payment-completo { background: rgba(92, 130, 104, 0.16); color: var(--money-pos); border-color: var(--money-pos); }
 
       .settings-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0 14px; }
       .deposit-box { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 6px 0; }
@@ -1964,11 +1998,11 @@ function GlobalStyle() {
         display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border);
         border-left: 4px solid var(--cat-color); border-radius: 10px; padding: 12px 14px; flex-wrap: wrap;
       }
-      .appt-time { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--gold); min-width: 52px; }
+      .appt-time { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--sage); min-width: 52px; }
       .appt-info { flex: 1; min-width: 200px; }
       .appt-main-line { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
       .combo-badge {
-        font-size: 10px; color: var(--rose); border: 1px solid var(--rose); border-radius: 999px;
+        font-size: 10px; color: var(--clay); border: 1px solid var(--clay); border-radius: 999px;
         padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.4px;
       }
       .appt-sub-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
@@ -1977,7 +2011,7 @@ function GlobalStyle() {
       .period-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
       .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
       .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-      .kpi-highlight { border-color: var(--gold); }
+      .kpi-highlight { border-color: var(--sage); }
       .kpi-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
       .kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; }
       .kpi-positive { color: var(--money-pos); }
@@ -2005,15 +2039,15 @@ function GlobalStyle() {
 
       .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
       .color-swatch { width: 26px; height: 26px; border-radius: 50%; background: var(--swatch-color); border: 2px solid transparent; cursor: pointer; }
-      .color-swatch.selected { border-color: var(--ivory); }
+      .color-swatch.selected { border-color: var(--ink); }
 
       .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
       .product-card { margin-bottom: 0; }
       .stock-badge { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 6px; color: var(--money-pos); }
-      .stock-badge.stock-low { color: var(--gold); }
+      .stock-badge.stock-low { color: var(--sage); }
 
       .empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 10px; color: var(--muted); text-align: center; }
-      .empty-title { font-size: 14px; color: var(--ivory); margin: 0; }
+      .empty-title { font-size: 14px; color: var(--ink); margin: 0; }
       .empty-hint { font-size: 12.5px; margin: 0; max-width: 280px; }
 
       .modal-overlay {
@@ -2030,7 +2064,7 @@ function GlobalStyle() {
 
       .toast {
         position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
-        background: var(--surface-2); border: 1px solid var(--gold); color: var(--ivory); padding: 10px 18px;
+        background: var(--surface-2); border: 1px solid var(--sage); color: var(--ink); padding: 10px 18px;
         border-radius: 999px; display: flex; align-items: center; gap: 8px; font-size: 13px;
       }
       .toast-error { border-color: var(--money-neg); }
