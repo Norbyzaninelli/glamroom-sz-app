@@ -270,9 +270,10 @@ export default function App() {
   const [appointments, setAppointments, apptsLoaded, apptsErr] = useCloudState("glamroom:appointments", []);
   const [transactions, setTransactions, txLoaded, txErr] = useCloudState("glamroom:transactions", []);
   const [settings, setSettings, settingsLoaded, settingsErr] = useCloudState("glamroom:settings", { adminPin: "1234", staffPin: "0000", paymentLink: "", depositNote: "" });
+  const [gallery, setGallery, galleryLoaded, galleryErr] = useCloudState("glamroom:gallery", []);
 
-  const allLoaded = servicesLoaded && employeesLoaded && productsLoaded && apptsLoaded && txLoaded && settingsLoaded;
-  const anySaveError = servicesErr || employeesErr || productsErr || apptsErr || txErr || settingsErr;
+  const allLoaded = servicesLoaded && employeesLoaded && productsLoaded && apptsLoaded && txLoaded && settingsLoaded && galleryLoaded;
+  const anySaveError = servicesErr || employeesErr || productsErr || apptsErr || txErr || settingsErr || galleryErr;
 
   const [view, setView] = useState("cliente"); // 'cliente' | 'panel'
   const [panelRole, setPanelRole] = useState(null); // null | 'admin' | 'staff'
@@ -316,6 +317,7 @@ export default function App() {
             appointments={appointments}
             setAppointments={setAppointments}
             settings={settings}
+            gallery={gallery}
             notify={notify}
           />
         )}
@@ -334,6 +336,7 @@ export default function App() {
             appointments={appointments} setAppointments={setAppointments}
             transactions={transactions} setTransactions={setTransactions}
             settings={settings} setSettings={setSettings}
+            gallery={gallery} setGallery={setGallery}
             notify={notify}
           />
         )}
@@ -458,6 +461,38 @@ function generateComboSlots(appointments, employee1Id, duration1, employee2Id, d
 /* Vista Clienta: flujo de reserva                                         */
 /* ---------------------------------------------------------------------- */
 
+function ImageCarousel({ images }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const t = setInterval(() => setIndex((i) => (i + 1) % images.length), 3800);
+    return () => clearInterval(t);
+  }, [images]);
+
+  if (!images || images.length === 0) return null;
+
+  return (
+    <div className="gallery-carousel">
+      {images.map((img, i) => (
+        <img
+          key={img.id}
+          src={img.url}
+          alt=""
+          className={`gallery-slide ${i === index ? "active" : ""}`}
+        />
+      ))}
+      {images.length > 1 && (
+        <div className="gallery-dots">
+          {images.map((img, i) => (
+            <span key={img.id} className={`gallery-dot ${i === index ? "active" : ""}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ServiceAccordion({ services, selectedId, onSelect, excludeId }) {
   const [openCat, setOpenCat] = useState(null);
 
@@ -506,7 +541,7 @@ function ServiceAccordion({ services, selectedId, onSelect, excludeId }) {
   );
 }
 
-function ClienteBooking({ services, employees, appointments, setAppointments, settings, notify }) {
+function ClienteBooking({ services, employees, appointments, setAppointments, settings, gallery, notify }) {
   const [step, setStep] = useState(1);
   const [serviceId, setServiceId] = useState(null);
   const [wantsSecond, setWantsSecond] = useState(false);
@@ -833,6 +868,8 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
           </div>
         </div>
       )}
+
+      <ImageCarousel images={gallery} />
     </div>
   );
 }
@@ -1720,11 +1757,42 @@ function ProductForm({ initial, onSave }) {
 
 /* --------------------------- Ajustes tab --------------------------- */
 
-function AjustesTab({ settings, setSettings, notify }) {
+function AjustesTab({ settings, setSettings, gallery, setGallery, notify }) {
   const [adminPin, setAdminPin] = useState(settings.adminPin || settings.pin || "1234");
   const [staffPin, setStaffPin] = useState(settings.staffPin || "0000");
   const [paymentLink, setPaymentLink] = useState(settings.paymentLink || "");
   const [depositNote, setDepositNote] = useState(settings.depositNote || "");
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // permite volver a elegir el mismo archivo más tarde
+    if (files.length === 0) return;
+    setUploading(true);
+    const uploaded = [];
+    for (const file of files) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("gallery").upload(path, file);
+      if (error) {
+        notify("No se pudo subir " + file.name, "error");
+        continue;
+      }
+      const { data } = supabase.storage.from("gallery").getPublicUrl(path);
+      uploaded.push({ id: uid(), url: data.publicUrl, path });
+    }
+    if (uploaded.length > 0) {
+      await setGallery([...gallery, ...uploaded]);
+      notify(`${uploaded.length} foto(s) agregadas a la galería`);
+    }
+    setUploading(false);
+  };
+
+  const handleDelete = async (img) => {
+    await supabase.storage.from("gallery").remove([img.path]);
+    setGallery(gallery.filter((g) => g.id !== img.id));
+    notify("Foto eliminada");
+  };
 
   return (
     <div className="card" style={{ maxWidth: 420 }}>
@@ -1774,6 +1842,36 @@ function AjustesTab({ settings, setSettings, notify }) {
         Cuando cargues un link, tus clientas van a ver un botón "Pagar seña ahora" al confirmar su turno,
         y vos vas a poder marcar en cada turno si la seña ya fue pagada.
       </p>
+
+      <hr className="settings-divider" />
+
+      <h4>Galería de fotos</h4>
+      <p className="muted small" style={{ marginTop: -6 }}>
+        Estas fotos van pasando en un carrusel, abajo del todo, mientras la clienta elige su turno.
+      </p>
+      <label className="btn btn-tiny" style={{ display: "inline-flex", cursor: "pointer", width: "fit-content" }}>
+        <Plus size={14} /> {uploading ? "Subiendo…" : "Subir fotos"}
+        <input
+          type="file" accept="image/*" multiple
+          onChange={handleUpload} disabled={uploading}
+          style={{ display: "none" }}
+        />
+      </label>
+
+      {gallery.length === 0 ? (
+        <p className="muted small" style={{ marginTop: 10 }}>Todavía no subiste ninguna foto.</p>
+      ) : (
+        <div className="gallery-grid">
+          {gallery.map((img) => (
+            <div key={img.id} className="gallery-thumb">
+              <img src={img.url} alt="" />
+              <button className="gallery-thumb-remove" onClick={() => handleDelete(img)} title="Eliminar foto">
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -2040,6 +2138,27 @@ function GlobalStyle() {
       .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
       .color-swatch { width: 26px; height: 26px; border-radius: 50%; background: var(--swatch-color); border: 2px solid transparent; cursor: pointer; }
       .color-swatch.selected { border-color: var(--ink); }
+
+      .gallery-carousel {
+        position: relative; width: 100%; aspect-ratio: 16 / 7; border-radius: 16px; overflow: hidden;
+        margin-top: 24px; background: var(--surface-2);
+      }
+      .gallery-slide {
+        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+        opacity: 0; transition: opacity 1s ease;
+      }
+      .gallery-slide.active { opacity: 1; }
+      .gallery-dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+      .gallery-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.55); }
+      .gallery-dot.active { background: #FFFFFF; width: 16px; border-radius: 3px; transition: width 0.3s ease; }
+
+      .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; margin-top: 12px; }
+      .gallery-thumb { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+      .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .gallery-thumb-remove {
+        position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; border: none;
+        background: rgba(58,53,48,0.65); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+      }
 
       .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
       .product-card { margin-bottom: 0; }
