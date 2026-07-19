@@ -1,4 +1,4 @@
-# The Glam Room SZ — Guía de publicación (gratis)
+# The Glam Room — Guía de publicación (gratis)
 
 Esta carpeta es tu app completa (turnos + finanzas), lista para vivir en
 internet de forma **gratuita e independiente de Claude**, en dos pasos:
