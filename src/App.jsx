@@ -23,7 +23,7 @@ const CATEGORIES = [
   { id: "otros", name: "Otros", color: "#948A7C" },
 ];
 
-// Catálogo real de servicios de The Glam Room SZ (relevado de la lista provista).
+// Catálogo real de servicios de The Glam Room (relevado de la lista provista).
 // Duración en minutos: estimación editable, ya que la lista original no incluía tiempos.
 // Precio en 0: a completar por el local, ya que no se proveyeron precios.
 const SEED_SERVICES = [
@@ -293,7 +293,7 @@ export default function App() {
         <GlobalStyle />
         <div className="loading-box">
           <Sparkles size={22} className="spin-slow" />
-          <span>Abriendo The Glam Room SZ…</span>
+          <span>Abriendo The Glam Room…</span>
         </div>
       </div>
     );
@@ -357,7 +357,7 @@ function Header({ view, setView, onLeavePanel }) {
       <div className="brand">
         <span className="brand-mark">✦</span>
         <div className="brand-text">
-          <span className="brand-name">The Glam Room SZ</span>
+          <span className="brand-name">The Glam Room</span>
           <span className="brand-sub">Estética integral</span>
         </div>
       </div>
@@ -984,7 +984,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
     const svc = services.find((s) => s.id === appt.serviceId);
     const message =
       `Hola ${appt.clientName}! Te confirmamos tu turno de ${svc ? svc.name : "tu servicio"} ` +
-      `en The Glam Room SZ el ${formatDateHuman(appt.date)} a las ${appt.time} hs. ¡Te esperamos! ✨`;
+      `en The Glam Room el ${formatDateHuman(appt.date)} a las ${appt.time} hs. ¡Te esperamos! ✨`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
     setAppointments(appointments.map((a) => (a.id === appt.id ? { ...a, reminderSent: true } : a)));
   };
