@@ -3,7 +3,7 @@ import {
   Calendar, Clock, Sparkles, Scissors, Users, Package, Wallet,
   TrendingUp, TrendingDown, Plus, X, Check, Lock, ChevronLeft,
   ChevronRight, ChevronDown, Trash2, Pencil, ShoppingBag, User, Settings,
-  AlertCircle, CalendarCheck, CircleDollarSign
+  AlertCircle, CalendarCheck, CircleDollarSign, MessageCircle
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LabelList
@@ -850,14 +850,14 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                 const appt = {
                   id: uid(), serviceId, employeeId, date, time,
                   clientName: clientName.trim(), clientPhone: clientPhone.trim(),
-                  status: "pendiente", paymentStatus: "pendiente", notes: "", comboId, createdAt: Date.now(),
+                  status: "pendiente", paymentStatus: "pendiente", notes: "", comboId, reminderSent: false, createdAt: Date.now(),
                 };
                 const newAppts = [appt];
                 if (service2) {
                   newAppts.push({
                     id: uid(), serviceId: serviceId2, employeeId: employeeId2, date, time: time2,
                     clientName: clientName.trim(), clientPhone: clientPhone.trim(),
-                    status: "pendiente", paymentStatus: "pendiente", notes: "", comboId, createdAt: Date.now(),
+                    status: "pendiente", paymentStatus: "pendiente", notes: "", comboId, reminderSent: false, createdAt: Date.now(),
                   });
                 }
                 setAppointments([...appointments, ...newAppts]);
@@ -967,6 +967,28 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
     setTransactions(transactions.filter((t) => t.appointmentId !== appt.id));
   };
 
+  // Arma el link de WhatsApp con el mensaje ya escrito; falta un solo toque
+  // para enviarlo. El envío real y automático (sin tocar nada) requiere la
+  // API de WhatsApp Business de Meta, que es un trámite aparte del local.
+  const formatPhoneForWhatsapp = (phone) => {
+    let digits = (phone || "").replace(/\D/g, "");
+    if (!digits) return null;
+    if (digits.startsWith("54")) return digits;
+    if (digits.startsWith("0")) digits = digits.slice(1);
+    return "549" + digits;
+  };
+
+  const sendReminder = (appt) => {
+    const phone = formatPhoneForWhatsapp(appt.clientPhone);
+    if (!phone) { notify("Esta clienta no tiene teléfono cargado", "error"); return; }
+    const svc = services.find((s) => s.id === appt.serviceId);
+    const message =
+      `Hola ${appt.clientName}! Te confirmamos tu turno de ${svc ? svc.name : "tu servicio"} ` +
+      `en The Glam Room SZ el ${formatDateHuman(appt.date)} a las ${appt.time} hs. ¡Te esperamos! ✨`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+    setAppointments(appointments.map((a) => (a.id === appt.id ? { ...a, reminderSent: true } : a)));
+  };
+
   const PAYMENT_ORDER = ["pendiente", "sena", "completo"];
   const PAYMENT_LABEL = { pendiente: "Sin pagar", sena: "Seña pagada", completo: "Pago completo" };
 
@@ -1054,6 +1076,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
                   <ApptActionsRow
                     a={a} emp={emp} settings={settings}
                     cyclePaymentStatus={cyclePaymentStatus} changeStatus={changeStatus} removeAppt={removeAppt}
+                    sendReminder={sendReminder}
                     PAYMENT_LABEL={PAYMENT_LABEL}
                   />
                 </div>
@@ -1091,6 +1114,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
                 a={detailAppt} emp={emp} settings={settings}
                 cyclePaymentStatus={cyclePaymentStatus} changeStatus={changeStatus}
                 removeAppt={(appt) => { removeAppt(appt); setDetailApptId(null); }}
+                sendReminder={sendReminder}
                 PAYMENT_LABEL={PAYMENT_LABEL}
               />
             </div>
@@ -1114,7 +1138,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
   );
 }
 
-function ApptActionsRow({ a, emp, settings, cyclePaymentStatus, changeStatus, removeAppt, PAYMENT_LABEL }) {
+function ApptActionsRow({ a, emp, settings, cyclePaymentStatus, changeStatus, removeAppt, sendReminder, PAYMENT_LABEL }) {
   return (
     <div className="appt-actions">
       {(emp?.paymentLink || settings?.paymentLink) && (
@@ -1127,6 +1151,13 @@ function ApptActionsRow({ a, emp, settings, cyclePaymentStatus, changeStatus, re
           <CircleDollarSign size={15} />
         </a>
       )}
+      <button
+        className={`icon-btn ${a.reminderSent ? "reminder-sent" : ""}`}
+        onClick={() => sendReminder(a)}
+        title={a.reminderSent ? "Recordatorio ya enviado (tocar para reenviar)" : "Enviar recordatorio por WhatsApp"}
+      >
+        <MessageCircle size={15} />
+      </button>
       <button
         className={`payment-chip payment-${a.paymentStatus || "pendiente"}`}
         onClick={() => cyclePaymentStatus(a)}
@@ -1284,7 +1315,7 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
         onClick={() => onSave({
           id: uid(), serviceId, employeeId, date, time,
           clientName: clientName.trim(), clientPhone: clientPhone.trim(),
-          status: "confirmado", paymentStatus, notes: "", createdAt: Date.now(),
+          status: "confirmado", paymentStatus, notes: "", reminderSent: false, createdAt: Date.now(),
         })}
       >
         Guardar turno
@@ -2268,6 +2299,7 @@ function GlobalStyle() {
         display: inline-flex; transition: background-color 0.18s var(--ease), color 0.18s var(--ease), transform 0.18s var(--ease);
       }
       .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+      .icon-btn.reminder-sent { color: var(--money-pos); }
       .icon-btn:active { transform: scale(0.92); }
       .link-btn { background: none; border: none; color: var(--sage); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
 
