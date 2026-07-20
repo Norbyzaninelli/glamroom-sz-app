@@ -3,12 +3,15 @@ import {
   Calendar, Clock, Sparkles, Scissors, Users, Package, Wallet,
   TrendingUp, TrendingDown, Plus, X, Check, Lock, ChevronLeft,
   ChevronRight, ChevronDown, Trash2, Pencil, ShoppingBag, User, Settings,
-  AlertCircle, CalendarCheck, CircleDollarSign, MessageCircle
+  AlertCircle, CalendarCheck, CircleDollarSign, MessageCircle, Download
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LabelList
 } from "recharts";
 import { supabase } from "./supabaseClient.js";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /* ---------------------------------------------------------------------- */
 /* Constantes de dominio                                                   */
@@ -323,6 +326,16 @@ export default function App() {
           />
         )}
 
+        {view === "misturnos" && (
+          <MisTurnos
+            services={services}
+            employees={employees}
+            appointments={appointments}
+            setAppointments={setAppointments}
+            notify={notify}
+          />
+        )}
+
         {view === "panel" && !panelRole && (
           <PinGate settings={settings} onUnlock={(role) => setPanelRole(role)} />
         )}
@@ -367,6 +380,12 @@ function Header({ view, setView, onLeavePanel }) {
           onClick={() => { setView("cliente"); onLeavePanel(); }}
         >
           Reservar turno
+        </button>
+        <button
+          className={view === "misturnos" ? "toggle-btn active" : "toggle-btn"}
+          onClick={() => { setView("misturnos"); onLeavePanel(); }}
+        >
+          Mis turnos
         </button>
         <button
           className={view === "panel" ? "toggle-btn active" : "toggle-btn"}
@@ -457,6 +476,11 @@ function generateComboSlots(appointments, employee1Id, duration1, employee2Id, d
     const overlaps2 = busy2.some((b) => t2 < b.end && t2 + duration2 > b.start);
     return !overlaps2;
   });
+}
+
+function isEmployeeOnTimeOff(employee, date) {
+  if (!employee?.timeOff || !date) return false;
+  return employee.timeOff.some((t) => date >= t.start && date <= t.end);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -563,16 +587,19 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
   const employee = employees.find((e) => e.id === employeeId);
   const employee2 = employees.find((e) => e.id === employeeId2);
 
+  const employeeOnLeave = isEmployeeOnTimeOff(employee, date);
+  const employee2OnLeave = service2 ? isEmployeeOnTimeOff(employee2, date) : false;
+
   const slots = useMemo(
     () =>
-      service && employeeId
+      service && employeeId && !employeeOnLeave && !employee2OnLeave
         ? generateComboSlots(
             appointments, employeeId, service.duration,
             service2 ? employeeId2 : null, service2 ? service2.duration : null,
             date, services
           )
         : [],
-    [appointments, employeeId, employeeId2, date, service, service2, services]
+    [appointments, employeeId, employeeId2, date, service, service2, services, employeeOnLeave, employee2OnLeave]
   );
 
   // Horarios calculados del combo, una vez elegido el horario de inicio.
@@ -796,7 +823,11 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
             onChange={(e) => { setDate(e.target.value); setTime(null); }}
           />
           {slots.length === 0 ? (
-            <EmptyState icon={Clock} title="No hay horarios libres ese día" hint="Probá con otra fecha, o con otro profesional." />
+            (employeeOnLeave || employee2OnLeave) ? (
+              <EmptyState icon={Calendar} title="Profesional de vacaciones ese día" hint="Probá con otra fecha, o elegí otra profesional." />
+            ) : (
+              <EmptyState icon={Clock} title="No hay horarios libres ese día" hint="Probá con otra fecha, o con otro profesional." />
+            )
           ) : (
             <div className="slot-grid">
               {slots.map((s) => (
@@ -872,6 +903,165 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
       )}
 
       <ImageCarousel images={gallery} />
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/* Mis turnos: la clienta busca, cancela o reprograma sin llamar al local  */
+/* ---------------------------------------------------------------------- */
+
+function MisTurnos({ services, employees, appointments, setAppointments, notify }) {
+  const [phoneInput, setPhoneInput] = useState("");
+  const [searched, setSearched] = useState(false);
+  const [rescheduleId, setRescheduleId] = useState(null);
+
+  const normalize = (p) => (p || "").replace(/\D/g, "");
+
+  const myAppts = useMemo(() => {
+    if (!searched) return [];
+    const digits = normalize(phoneInput);
+    if (!digits) return [];
+    return appointments
+      .filter((a) => normalize(a.clientPhone) === digits && a.status !== "cancelado" && a.date >= todayStr())
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments, searched]);
+
+  const cancelAppt = (appt) => {
+    if (appt.comboId) {
+      setAppointments(appointments.map((a) => (a.comboId === appt.comboId ? { ...a, status: "cancelado" } : a)));
+    } else {
+      setAppointments(appointments.map((a) => (a.id === appt.id ? { ...a, status: "cancelado" } : a)));
+    }
+    notify("Turno cancelado");
+  };
+
+  return (
+    <div className="booking-wizard">
+      <div className="card">
+        <h3>Buscá tu turno</h3>
+        <p className="muted small">Ingresá el teléfono con el que reservaste para ver, cancelar o reprogramar tu turno.</p>
+        <div className="form-stack">
+          <input
+            className="text-input"
+            value={phoneInput}
+            onChange={(e) => { setPhoneInput(e.target.value); setSearched(false); }}
+            placeholder="Tu teléfono"
+          />
+          <button className="btn btn-primary" disabled={!phoneInput.trim()} onClick={() => setSearched(true)}>
+            Buscar
+          </button>
+        </div>
+
+        {searched && (
+          myAppts.length === 0 ? (
+            <div style={{ marginTop: 10 }}>
+              <EmptyState icon={Calendar} title="No encontramos turnos" hint="Revisá que sea el mismo teléfono que usaste al reservar." />
+            </div>
+          ) : (
+            <div className="appt-list" style={{ marginTop: 16 }}>
+              {myAppts.map((appt) => (
+                <MyApptCard
+                  key={appt.id}
+                  appt={appt}
+                  services={services}
+                  employees={employees}
+                  appointments={appointments}
+                  onCancel={() => cancelAppt(appt)}
+                  isRescheduling={rescheduleId === appt.id}
+                  onStartReschedule={() => setRescheduleId(appt.id)}
+                  onCancelReschedule={() => setRescheduleId(null)}
+                  onConfirmReschedule={(date, time) => {
+                    setAppointments(appointments.map((a) =>
+                      a.id === appt.id ? { ...a, date, time, status: "pendiente", reminderSent: false } : a
+                    ));
+                    setRescheduleId(null);
+                    notify("Turno reprogramado");
+                  }}
+                />
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MyApptCard({ appt, services, employees, appointments, onCancel, isRescheduling, onStartReschedule, onCancelReschedule, onConfirmReschedule }) {
+  const svc = services.find((s) => s.id === appt.serviceId);
+  const emp = employees.find((e) => e.id === appt.employeeId);
+  const cat = svc ? categoryById(svc.categoryId) : null;
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [rDate, setRDate] = useState(appt.date);
+  const [rTime, setRTime] = useState(null);
+
+  const onLeave = isEmployeeOnTimeOff(emp, rDate);
+  const rSlots = useMemo(
+    () => (svc && emp && !onLeave ? generateSlots(appointments, emp.id, rDate, svc.duration, services, appt.id) : []),
+    [appointments, emp, rDate, svc, services, appt.id, onLeave]
+  );
+
+  const maxDate = addDays(todayStr(), 60);
+
+  return (
+    <div className="card" style={{ borderLeft: `4px solid ${cat ? cat.color : "#948A7C"}`, marginBottom: 12 }}>
+      <div className="appt-main-line">
+        <strong>{svc ? svc.name : "Servicio"}</strong>
+        <span className="status-badge" style={{ "--chip-color": STATUS_COLOR[appt.status] }}>{STATUS_LABEL[appt.status]}</span>
+        {appt.comboId && <span className="combo-badge">Combo</span>}
+      </div>
+      <div className="appt-sub-line" style={{ marginBottom: 10 }}>
+        <Avatar name={emp ? emp.name : "?"} color={emp ? emp.color : "#948A7C"} size={20} />
+        {emp ? emp.name : "Sin asignar"} · {formatDateHuman(appt.date)} · {appt.time} hs
+      </div>
+
+      {!isRescheduling && !confirmingCancel && (
+        <div className="finance-actions">
+          {!appt.comboId && <button className="btn btn-tiny" onClick={onStartReschedule}>Reprogramar</button>}
+          <button className="btn btn-tiny btn-ghost" onClick={() => setConfirmingCancel(true)}>Cancelar turno</button>
+        </div>
+      )}
+
+      {confirmingCancel && (
+        <div className="summary-box">
+          <span>¿Seguro que querés cancelar este turno?</span>
+          <div className="finance-actions">
+            <button className="btn btn-tiny btn-ghost" onClick={() => setConfirmingCancel(false)}>Volver</button>
+            <button className="btn btn-tiny" style={{ background: "var(--money-neg)", color: "#fff" }} onClick={onCancel}>
+              Sí, cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isRescheduling && (
+        <div className="summary-box">
+          <label className="field-label">Nueva fecha</label>
+          <input
+            className="date-input" type="date" value={rDate} min={todayStr()} max={maxDate}
+            onChange={(e) => { setRDate(e.target.value); setRTime(null); }}
+          />
+          {onLeave ? (
+            <span className="muted small">Tu profesional está de vacaciones ese día, probá con otra fecha.</span>
+          ) : rSlots.length === 0 ? (
+            <span className="muted small">No hay horarios libres ese día.</span>
+          ) : (
+            <div className="slot-grid">
+              {rSlots.map((s) => (
+                <button key={s} className={`slot-btn ${rTime === s ? "selected" : ""}`} onClick={() => setRTime(s)}>{s}</button>
+              ))}
+            </div>
+          )}
+          <div className="finance-actions" style={{ marginTop: 8 }}>
+            <button className="btn btn-tiny btn-ghost" onClick={onCancelReschedule}>Volver</button>
+            <button className="btn btn-tiny btn-primary" disabled={!rTime} onClick={() => onConfirmReschedule(rDate, rTime)}>
+              Confirmar nuevo horario
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1089,6 +1279,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
           appointments={dayAppts}
           employees={employeeFilter === "todas" ? employees : employees.filter((e) => e.id === employeeFilter)}
           services={services}
+          date={date}
           onSelectAppt={(a) => setDetailApptId(a.id)}
         />
       )}
@@ -1180,7 +1371,7 @@ function ApptActionsRow({ a, emp, settings, cyclePaymentStatus, changeStatus, re
 // Calendario tipo agenda: una columna por profesional, con los turnos
 // posicionados como bloques según su horario real. Así se ve de un
 // vistazo qué espacios del día ya están ocupados.
-function DayCalendar({ appointments, employees, services, onSelectAppt }) {
+function DayCalendar({ appointments, employees, services, date, onSelectAppt }) {
   const totalMinutes = SALON_CLOSE - SALON_OPEN;
   const hourMarks = [];
   for (let t = SALON_OPEN; t <= SALON_CLOSE; t += 60) hourMarks.push(t);
@@ -1201,6 +1392,7 @@ function DayCalendar({ appointments, employees, services, onSelectAppt }) {
       <div className="day-calendar-columns">
         {employees.map((emp) => {
           const empAppts = appointments.filter((a) => a.employeeId === emp.id && a.status !== "cancelado");
+          const onLeave = isEmployeeOnTimeOff(emp, date);
           return (
             <div key={emp.id} className="day-calendar-col">
               <div className="day-calendar-col-header">
@@ -1208,10 +1400,16 @@ function DayCalendar({ appointments, employees, services, onSelectAppt }) {
                 <span>{emp.name}</span>
               </div>
               <div className="day-calendar-col-body">
+                {onLeave && (
+                  <div className="day-calendar-leave">
+                    <Calendar size={16} />
+                    <span>De vacaciones</span>
+                  </div>
+                )}
                 {hourMarks.map((t) => (
                   <div key={t} className="day-calendar-gridline" style={{ top: `${((t - SALON_OPEN) / totalMinutes) * 100}%` }} />
                 ))}
-                {empAppts.length === 0 && <span className="day-calendar-empty">Sin turnos</span>}
+                {!onLeave && empAppts.length === 0 && <span className="day-calendar-empty">Sin turnos</span>}
                 {empAppts.map((a) => {
                   const svc = services.find((s) => s.id === a.serviceId);
                   const dur = svc ? svc.duration : 30;
@@ -1252,9 +1450,11 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
 
   const service = services.find((s) => s.id === serviceId);
   const eligible = employees.filter((e) => e.serviceIds?.includes(serviceId));
+  const employee = employees.find((e) => e.id === employeeId);
+  const employeeOnLeave = isEmployeeOnTimeOff(employee, date);
   const slots = useMemo(
-    () => (service && employeeId ? generateSlots(appointments, employeeId, date, service.duration, services) : []),
-    [appointments, employeeId, date, service, services]
+    () => (service && employeeId && !employeeOnLeave ? generateSlots(appointments, employeeId, date, service.duration, services) : []),
+    [appointments, employeeId, date, service, services, employeeOnLeave]
   );
 
   if (services.length === 0) return <EmptyState icon={Scissors} title="No hay servicios" hint="Cargá servicios en la pestaña Servicios y equipo." />;
@@ -1287,7 +1487,9 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
         <>
           <label className="field-label">Horario</label>
           {slots.length === 0 ? (
-            <span className="muted small">No hay horarios libres para esta fecha.</span>
+            <span className="muted small">
+              {employeeOnLeave ? "Esta profesional está de vacaciones ese día." : "No hay horarios libres para esta fecha."}
+            </span>
           ) : (
             <div className="slot-grid">
               {slots.map((s) => (
@@ -1326,7 +1528,7 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
 
 /* --------------------------- Finanzas tab --------------------------- */
 
-function FinanzasTab({ products, setProducts, transactions, setTransactions, employees, services, fixedExpenses, setFixedExpenses, notify }) {
+function FinanzasTab({ products, setProducts, transactions, setTransactions, employees, services, appointments, fixedExpenses, setFixedExpenses, notify }) {
   const [period, setPeriod] = useState("mes");
   const [customStart, setCustomStart] = useState(addDays(todayStr(), -7));
   const [customEnd, setCustomEnd] = useState(todayStr());
@@ -1349,6 +1551,16 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
   const ingresos = filtered.filter((t) => t.type.startsWith("ingreso")).reduce((s, t) => s + t.amount, 0);
   const egresos = filtered.filter((t) => t.type === "egreso").reduce((s, t) => s + t.amount, 0);
   const neto = ingresos - egresos;
+
+  // Proyección: turnos ya agendados (pendientes o confirmados, sin realizar todavía)
+  // dentro del período elegido, valuados a precio de lista de cada servicio.
+  const proyectado = appointments
+    .filter((a) => (a.status === "pendiente" || a.status === "confirmado") && a.date >= range[0] && a.date <= range[1])
+    .reduce((sum, a) => {
+      const svc = services.find((s) => s.id === a.serviceId);
+      return sum + (svc ? svc.price : 0);
+    }, 0);
+  const totalEstimado = ingresos + proyectado;
 
   const byCategory = CATEGORIES.map((c) => ({
     name: c.name, color: c.color,
@@ -1385,6 +1597,88 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
     notify("Movimiento eliminado");
   };
 
+  const periodLabel =
+    period === "hoy" ? "Hoy" :
+    period === "semana" ? "Últimos 7 días" :
+    period === "mes" ? "Este mes" :
+    `${range[0]} a ${range[1]}`;
+
+  const sortedFiltered = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const wsResumen = XLSX.utils.aoa_to_sheet([
+      ["The Glam Room — Reporte financiero"],
+      ["Período", periodLabel],
+      ["Rango de fechas", `${range[0]} a ${range[1]}`],
+      [],
+      ["Ingresos", ingresos],
+      ["Egresos", egresos],
+      ["Ganancia neta", neto],
+      ["Agendado (sin realizar)", proyectado],
+      ["Total estimado del período", totalEstimado],
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
+
+    const movRows = [["Fecha", "Tipo", "Descripción", "Empleada / Categoría", "Monto"]];
+    sortedFiltered.forEach((t) => {
+      movRows.push([
+        t.date,
+        t.type === "egreso" ? "Gasto" : t.type === "ingreso_producto" ? "Venta de producto" : "Ingreso por servicio",
+        t.description || "",
+        t.employeeName || t.categoryName || "",
+        t.type === "egreso" ? -t.amount : t.amount,
+      ]);
+    });
+    const wsMov = XLSX.utils.aoa_to_sheet(movRows);
+    XLSX.utils.book_append_sheet(wb, wsMov, "Movimientos");
+
+    XLSX.writeFile(wb, `glamroom-finanzas-${range[0]}_${range[1]}.xlsx`);
+    notify("Excel descargado");
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("The Glam Room — Reporte financiero", 14, 18);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`Período: ${periodLabel}  ·  ${range[0]} a ${range[1]}`, 14, 25);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 32,
+      head: [["Indicador", "Monto"]],
+      body: [
+        ["Ingresos", formatMoney(ingresos)],
+        ["Egresos", formatMoney(egresos)],
+        ["Ganancia neta", formatMoney(neto)],
+        ["Agendado (sin realizar)", formatMoney(proyectado)],
+        ["Total estimado del período", formatMoney(totalEstimado)],
+      ],
+      theme: "plain",
+      styles: { fontSize: 10 },
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [["Fecha", "Tipo", "Descripción", "Detalle", "Monto"]],
+      body: sortedFiltered.map((t) => [
+        formatDateHuman(t.date),
+        t.type === "egreso" ? "Gasto" : t.type === "ingreso_producto" ? "Venta" : "Servicio",
+        t.description || "",
+        t.employeeName || t.categoryName || "",
+        (t.type === "egreso" ? "-" : "+") + formatMoney(t.amount),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [110, 145, 121] },
+    });
+
+    doc.save(`glamroom-finanzas-${range[0]}_${range[1]}.pdf`);
+    notify("PDF descargado");
+  };
+
   return (
     <div>
       <div className="tab-header-row">
@@ -1393,6 +1687,8 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
           <button className="btn btn-tiny" onClick={() => setModal("ingreso")}><Plus size={14} /> Ingreso</button>
           <button className="btn btn-tiny" onClick={() => setModal("gasto")}><Plus size={14} /> Gasto</button>
           <button className="btn btn-tiny" onClick={() => setModal("venta")}><Plus size={14} /> Venta de producto</button>
+          <button className="btn btn-tiny" onClick={exportToExcel}><Download size={14} /> Excel</button>
+          <button className="btn btn-tiny" onClick={exportToPDF}><Download size={14} /> PDF</button>
         </div>
       </div>
 
@@ -1424,7 +1720,19 @@ function FinanzasTab({ products, setProducts, transactions, setTransactions, emp
           <span className="kpi-label"><Wallet size={14} /> Ganancia neta</span>
           <span className={`kpi-value ${neto >= 0 ? "kpi-positive" : "kpi-negative"}`}>{formatMoney(neto)}</span>
         </div>
+        <div className="kpi-card">
+          <span className="kpi-label"><CalendarCheck size={14} /> Agendado (sin realizar)</span>
+          <span className="kpi-value kpi-projected">{formatMoney(proyectado)}</span>
+        </div>
+        <div className="kpi-card kpi-highlight">
+          <span className="kpi-label"><Sparkles size={14} /> Total estimado del período</span>
+          <span className="kpi-value kpi-projected">{formatMoney(totalEstimado)}</span>
+        </div>
       </div>
+      <p className="muted small" style={{ marginTop: -10, marginBottom: 16 }}>
+        "Agendado" son turnos pendientes o confirmados dentro del período que todavía no se realizaron ni cobraron —
+        una proyección si se cumple lo agendado, valuado a precio de lista. No es plata ya en caja.
+      </p>
 
       <div className="chart-grid">
         <div className="card chart-card">
@@ -1913,9 +2221,19 @@ function EmployeeForm({ services, initial, onSave }) {
   const [serviceIds, setServiceIds] = useState(initial?.serviceIds || []);
   const [isAdmin, setIsAdmin] = useState(initial?.isAdmin || false);
   const [paymentLink, setPaymentLink] = useState(initial?.paymentLink || "");
+  const [timeOff, setTimeOff] = useState(initial?.timeOff || []);
+  const [toStart, setToStart] = useState(todayStr());
+  const [toEnd, setToEnd] = useState(todayStr());
+  const [toReason, setToReason] = useState("");
 
   const toggleService = (id) => {
     setServiceIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const addTimeOff = () => {
+    if (toEnd < toStart) return;
+    setTimeOff([...timeOff, { id: uid(), start: toStart, end: toEnd, reason: toReason.trim() }]);
+    setToReason("");
   };
 
   const allSelected = services.length > 0 && serviceIds.length === services.length;
@@ -1966,6 +2284,31 @@ function EmployeeForm({ services, initial, onSave }) {
         Si lo dejás vacío, se usa el link general del local (Panel → Ajustes) cuando corresponda.
       </span>
 
+      <label className="field-label" style={{ marginTop: 8 }}>Vacaciones / días libres</label>
+      {timeOff.length > 0 && (
+        <div className="list-simple">
+          {timeOff.map((t) => (
+            <div key={t.id} className="list-row">
+              <span className="list-row-main">
+                {formatDateHuman(t.start)}{t.end !== t.start ? ` — ${formatDateHuman(t.end)}` : ""}
+              </span>
+              {t.reason && <span className="muted small">{t.reason}</span>}
+              <button className="icon-btn" onClick={() => setTimeOff(timeOff.filter((x) => x.id !== t.id))}><Trash2 size={14} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="timeoff-add-row">
+        <input className="date-input" type="date" value={toStart} onChange={(e) => { setToStart(e.target.value); if (toEnd < e.target.value) setToEnd(e.target.value); }} />
+        <span className="muted small">a</span>
+        <input className="date-input" type="date" value={toEnd} min={toStart} onChange={(e) => setToEnd(e.target.value)} />
+        <input className="text-input" value={toReason} onChange={(e) => setToReason(e.target.value)} placeholder="Motivo (opcional)" />
+        <button className="btn btn-tiny" onClick={addTimeOff}><Plus size={14} /> Agregar</button>
+      </div>
+      <span className="muted small">
+        Esos días, esta profesional no va a aparecer disponible ni para clientas ni para turnos manuales.
+      </span>
+
       <label className="checkbox-row" style={{ marginTop: 8 }}>
         <input type="checkbox" checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />
         Rol de administradora (acceso completo al panel, incluida Finanzas)
@@ -1974,7 +2317,7 @@ function EmployeeForm({ services, initial, onSave }) {
       <button
         className="btn btn-primary"
         disabled={!name.trim()}
-        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin, paymentLink: paymentLink.trim() })}
+        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin, paymentLink: paymentLink.trim(), timeOff })}
       >
         Guardar profesional
       </button>
@@ -2487,6 +2830,13 @@ function GlobalStyle() {
         position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
         font-size: 11.5px; color: var(--muted);
       }
+      .day-calendar-leave {
+        position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 4px; background: repeating-linear-gradient(
+          135deg, var(--surface-2), var(--surface-2) 8px, var(--border) 8px, var(--border) 16px
+        );
+        color: var(--muted); font-size: 11.5px; font-weight: 600;
+      }
       .day-calendar-block {
         position: absolute; left: 4px; right: 4px; min-height: 26px; border-radius: 6px;
         background: color-mix(in srgb, var(--block-color) 20%, white); border-left: 3px solid var(--block-color);
@@ -2514,6 +2864,7 @@ function GlobalStyle() {
       .kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; }
       .kpi-positive { color: var(--money-pos); }
       .kpi-negative { color: var(--money-neg); }
+      .kpi-projected { color: var(--clay); }
 
       .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px; }
       .chart-card h4 { font-size: 14px; }
@@ -2533,6 +2884,9 @@ function GlobalStyle() {
 
       .form-stack { display: flex; flex-direction: column; gap: 4px; }
       .checkbox-list { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+      .timeoff-add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+      .timeoff-add-row .date-input { flex: 1; min-width: 128px; }
+      .timeoff-add-row .text-input { flex: 2; min-width: 140px; }
       .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 
       .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
