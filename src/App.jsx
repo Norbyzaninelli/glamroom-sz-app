@@ -31,40 +31,40 @@ const CATEGORIES = [
 // Precio en 0: a completar por el local, ya que no se proveyeron precios.
 const SEED_SERVICES = [
   // Facial
-  { name: "Limpieza facial profunda", categoryId: "facial", duration: 60, price: 0 },
-  { name: "Sesión de fototerapia LED", categoryId: "facial", duration: 30, price: 0 },
-  { name: "Pack de 4 sesiones de fototerapia LED", categoryId: "facial", duration: 30, price: 0 },
-  { name: "Sesión de dermaplaning", categoryId: "facial", duration: 45, price: 0 },
-  { name: "Shock de hidratación", categoryId: "facial", duration: 30, price: 0 },
-  { name: "Limpieza facial profunda + Dermaplaning", categoryId: "facial", duration: 90, price: 0 },
-  { name: "Limpieza facial + Dermapen facial", categoryId: "facial", duration: 75, price: 0 },
-  { name: "Limpieza facial profunda + Shock de hidratación", categoryId: "facial", duration: 75, price: 0 },
-  { name: "Hidralips", categoryId: "facial", duration: 20, price: 0 },
-  { name: "Pack de Hidralips (3 sesiones) + Bálsamo de regalo", categoryId: "facial", duration: 20, price: 0 },
-  { name: "Pack de peeling (3 sesiones) + Protector solar de regalo", categoryId: "facial", duration: 30, price: 0 },
+  { name: "Limpieza facial profunda", categoryId: "facial", duration: 60, price: 0, description: "Limpieza en profundidad de poros, remoción de impurezas y células muertas para una piel renovada." },
+  { name: "Sesión de fototerapia LED", categoryId: "facial", duration: 30, price: 0, description: "Tratamiento con luz LED que estimula la piel para mejorar su textura y luminosidad." },
+  { name: "Pack de 4 sesiones de fototerapia LED", categoryId: "facial", duration: 30, price: 0, description: "Cuatro sesiones de fototerapia LED para potenciar los resultados con tratamiento continuo." },
+  { name: "Sesión de dermaplaning", categoryId: "facial", duration: 45, price: 0, description: "Exfoliación mecánica que retira células muertas y vello facial fino, dejando la piel más luminosa." },
+  { name: "Shock de hidratación", categoryId: "facial", duration: 30, price: 0, description: "Tratamiento intensivo de hidratación profunda para pieles resecas o deshidratadas." },
+  { name: "Limpieza facial profunda + Dermaplaning", categoryId: "facial", duration: 90, price: 0, description: "Combina limpieza profunda con exfoliación mecánica para una piel renovada y luminosa." },
+  { name: "Limpieza facial + Dermapen facial", categoryId: "facial", duration: 75, price: 0, description: "Limpieza facial junto con microagujas para estimular la renovación celular." },
+  { name: "Limpieza facial profunda + Shock de hidratación", categoryId: "facial", duration: 75, price: 0, description: "Limpieza en profundidad combinada con hidratación intensiva." },
+  { name: "Hidralips", categoryId: "facial", duration: 20, price: 0, description: "Tratamiento hidratante específico para labios resecos o agrietados." },
+  { name: "Pack de Hidralips (3 sesiones) + Bálsamo de regalo", categoryId: "facial", duration: 20, price: 0, description: "Tres sesiones de hidratación labial profunda. Incluye un bálsamo de regalo." },
+  { name: "Pack de peeling (3 sesiones) + Protector solar de regalo", categoryId: "facial", duration: 30, price: 0, description: "Tres sesiones de peeling para renovar la piel. Incluye protector solar de regalo." },
   // Manos y pies
-  { name: "Manicura tradicional", categoryId: "manos_pies", duration: 45, price: 0 },
-  { name: "Semipermanente liso", categoryId: "manos_pies", duration: 60, price: 0 },
-  { name: "Capping liso", categoryId: "manos_pies", duration: 75, price: 0 },
-  { name: "Soft gel", categoryId: "manos_pies", duration: 90, price: 0 },
-  { name: "Pedicuría | Belleza de pies", categoryId: "manos_pies", duration: 60, price: 0 },
-  { name: "Podología + Semipermanente", categoryId: "manos_pies", duration: 90, price: 0 },
-  { name: "Remoción por TheGlam", categoryId: "manos_pies", duration: 20, price: 0 },
-  { name: "Remoción por colega", categoryId: "manos_pies", duration: 20, price: 0 },
+  { name: "Manicura tradicional", categoryId: "manos_pies", duration: 45, price: 0, description: "Corte, limado y esmaltado clásico de uñas." },
+  { name: "Semipermanente liso", categoryId: "manos_pies", duration: 60, price: 0, description: "Esmaltado semipermanente de larga duración sobre uña natural." },
+  { name: "Capping liso", categoryId: "manos_pies", duration: 75, price: 0, description: "Refuerzo de la uña natural con una capa protectora y esmaltado semipermanente." },
+  { name: "Soft gel", categoryId: "manos_pies", duration: 90, price: 0, description: "Extensión o refuerzo de uñas con gel flexible, de aspecto natural." },
+  { name: "Pedicuría | Belleza de pies", categoryId: "manos_pies", duration: 60, price: 0, description: "Cuidado completo de pies: corte, limado, cutículas y esmaltado." },
+  { name: "Podología + Semipermanente", categoryId: "manos_pies", duration: 90, price: 0, description: "Tratamiento podológico junto con esmaltado semipermanente." },
+  { name: "Remoción por TheGlam", categoryId: "manos_pies", duration: 20, price: 0, description: "Retiro de esmalte semipermanente o gel realizado previamente en el local." },
+  { name: "Remoción por colega", categoryId: "manos_pies", duration: 20, price: 0, description: "Retiro de esmalte semipermanente o gel realizado en otro salón." },
   // Pestañas y cejas
-  { name: "Perfilado", categoryId: "pestanas", duration: 20, price: 0 },
-  { name: "Laminado", categoryId: "pestanas", duration: 45, price: 0 },
-  { name: "Lifting", categoryId: "pestanas", duration: 45, price: 0 },
-  { name: "Perfilado + Laminado", categoryId: "pestanas", duration: 60, price: 0 },
-  { name: "Perfilado + Lifting", categoryId: "pestanas", duration: 60, price: 0 },
-  { name: "Perfilado + Laminado + Lifting", categoryId: "pestanas", duration: 75, price: 0 },
+  { name: "Perfilado", categoryId: "pestanas", duration: 20, price: 0, description: "Diseño y depilación de cejas para definir su forma." },
+  { name: "Laminado", categoryId: "pestanas", duration: 45, price: 0, description: "Alisado y fijación de pestañas o cejas para un efecto más prolijo y voluminoso." },
+  { name: "Lifting", categoryId: "pestanas", duration: 45, price: 0, description: "Curvado y fijación de pestañas naturales para un efecto rizado duradero." },
+  { name: "Perfilado + Laminado", categoryId: "pestanas", duration: 60, price: 0, description: "Diseño de cejas combinado con laminado para un acabado prolijo." },
+  { name: "Perfilado + Lifting", categoryId: "pestanas", duration: 60, price: 0, description: "Diseño de cejas combinado con lifting de pestañas." },
+  { name: "Perfilado + Laminado + Lifting", categoryId: "pestanas", duration: 75, price: 0, description: "Tratamiento completo de cejas y pestañas: diseño, laminado y lifting." },
   // Corporal
-  { name: "Auto-bronceado", categoryId: "corporal", duration: 30, price: 0 },
-  { name: "Depilación láser", categoryId: "corporal", duration: 30, price: 0 },
+  { name: "Auto-bronceado", categoryId: "corporal", duration: 30, price: 0, description: "Aplicación de bronceado sin sol, de efecto natural y progresivo." },
+  { name: "Depilación láser", categoryId: "corporal", duration: 30, price: 0, description: "Depilación con tecnología láser para reducción del vello a largo plazo." },
   // Social
-  { name: "Maquillaje social", categoryId: "social", duration: 60, price: 0 },
-  { name: "Maquillaje social y peinado", categoryId: "social", duration: 90, price: 0 },
-  { name: "Glitter", categoryId: "social", duration: 15, price: 0 },
+  { name: "Maquillaje social", categoryId: "social", duration: 60, price: 0, description: "Maquillaje profesional para eventos y ocasiones especiales." },
+  { name: "Maquillaje social y peinado", categoryId: "social", duration: 90, price: 0, description: "Maquillaje y peinado profesional para eventos especiales." },
+  { name: "Glitter", categoryId: "social", duration: 15, price: 0, description: "Aplicación de brillos decorativos para looks de fiesta." },
 ];
 
 const EMPLOYEE_COLORS = ["#6E9179", "#B97A5D", "#C29A47", "#8779AD", "#5C8B9C", "#948A7C", "#4F7A63"];
@@ -272,15 +272,15 @@ export default function App() {
   const [products, setProducts, productsLoaded, productsErr] = useCloudState("glamroom:products", []);
   const [appointments, setAppointments, apptsLoaded, apptsErr] = useCloudState("glamroom:appointments", []);
   const [transactions, setTransactions, txLoaded, txErr] = useCloudState("glamroom:transactions", []);
-  const [settings, setSettings, settingsLoaded, settingsErr] = useCloudState("glamroom:settings", { adminPin: "1234", staffPin: "0000", paymentLink: "", depositNote: "" });
+  const [settings, setSettings, settingsLoaded, settingsErr] = useCloudState("glamroom:settings", { adminPin: "1234", paymentLink: "", depositNote: "" });
   const [gallery, setGallery, galleryLoaded, galleryErr] = useCloudState("glamroom:gallery", []);
   const [fixedExpenses, setFixedExpenses, fixedExpensesLoaded, fixedExpensesErr] = useCloudState("glamroom:fixedExpenses", []);
 
   const allLoaded = servicesLoaded && employeesLoaded && productsLoaded && apptsLoaded && txLoaded && settingsLoaded && galleryLoaded && fixedExpensesLoaded;
   const anySaveError = servicesErr || employeesErr || productsErr || apptsErr || txErr || settingsErr || galleryErr || fixedExpensesErr;
 
-  const [view, setView] = useState("cliente"); // 'cliente' | 'panel'
-  const [panelRole, setPanelRole] = useState(null); // null | 'admin' | 'staff'
+  const [view, setView] = useState("cliente"); // 'cliente' | 'misturnos' | 'panel'
+  const [session, setSession] = useState(null); // null | { role: 'admin'|'staff', employeeId: string|null }
   const [tab, setTab] = useState("turnos");
   const [toast, setToast] = useState(null);
 
@@ -311,7 +311,7 @@ export default function App() {
         </div>
       )}
       <Toast toast={toast} />
-      <Header view={view} setView={setView} onLeavePanel={() => setPanelRole(null)} />
+      <Header view={view} setView={setView} onLeavePanel={() => setSession(null)} />
 
       <main className="main-area">
         {view === "cliente" && (
@@ -336,13 +336,13 @@ export default function App() {
           />
         )}
 
-        {view === "panel" && !panelRole && (
-          <PinGate settings={settings} onUnlock={(role) => setPanelRole(role)} />
+        {view === "panel" && !session && (
+          <LoginGate settings={settings} employees={employees} onLogin={(s) => setSession(s)} />
         )}
 
-        {view === "panel" && panelRole && (
+        {view === "panel" && session && (
           <PanelAdmin
-            role={panelRole}
+            session={session}
             tab={tab} setTab={setTab}
             services={services} setServices={setServices}
             employees={employees} setEmployees={setEmployees}
@@ -391,23 +391,47 @@ function Header({ view, setView, onLeavePanel }) {
           className={view === "panel" ? "toggle-btn active" : "toggle-btn"}
           onClick={() => { setView("panel"); }}
         >
-          Panel del local
+          Ingresar
         </button>
       </div>
     </header>
   );
 }
 
-function PinGate({ settings, onUnlock }) {
+function LoginGate({ settings, employees, onLogin }) {
+  const [selected, setSelected] = useState(""); // "" = administración general
   const [pin, setPin] = useState("");
   const [err, setErr] = useState(false);
-  const adminPin = settings.adminPin || settings.pin || "1234";
-  const staffPin = settings.staffPin || "0000";
+  const masterPin = settings.adminPin || settings.pin || "1234";
+
+  const handleLogin = () => {
+    if (!selected) {
+      if (pin === masterPin) onLogin({ role: "admin", employeeId: null });
+      else setErr(true);
+      return;
+    }
+    const emp = employees.find((e) => e.id === selected);
+    if (emp && emp.pin && pin === emp.pin) {
+      onLogin({ role: emp.isAdmin ? "admin" : "staff", employeeId: emp.id });
+    } else {
+      setErr(true);
+    }
+  };
+
   return (
     <div className="pin-gate">
       <Lock size={26} />
-      <h2>Panel del local</h2>
-      <p>Ingresá tu PIN. El de administradora ve todo; el de empleada solo la agenda.</p>
+      <h2>Ingresar</h2>
+      <p>Elegí tu nombre e ingresá tu PIN personal.</p>
+      <select
+        className="select-input"
+        style={{ maxWidth: 240 }}
+        value={selected}
+        onChange={(e) => { setSelected(e.target.value); setPin(""); setErr(false); }}
+      >
+        <option value="">Administración general</option>
+        {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+      </select>
       <input
         className="pin-input"
         type="password"
@@ -418,17 +442,11 @@ function PinGate({ settings, onUnlock }) {
         placeholder="••••"
       />
       {err && <span className="pin-error">PIN incorrecto.</span>}
-      <button
-        className="btn btn-primary"
-        onClick={() => {
-          if (pin === adminPin) onUnlock("admin");
-          else if (pin === staffPin) onUnlock("staff");
-          else setErr(true);
-        }}
-      >
-        Entrar
-      </button>
-      <span className="pin-hint">PIN de administradora por defecto: 1234 · PIN de empleada por defecto: 0000 (cambialos en Ajustes)</span>
+      <button className="btn btn-primary" onClick={handleLogin}>Entrar</button>
+      <span className="pin-hint">
+        Si sos administradora, entrás con acceso completo. Si sos empleada, ves tu propia agenda y tus propios
+        ingresos. Los PINs personales se configuran en Servicios y equipo, editando a cada profesional.
+      </span>
     </div>
   );
 }
@@ -698,6 +716,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
               </div>
               <div><Clock size={14} /> {service.duration} minutos</div>
               <div><CircleDollarSign size={14} /> {formatMoney(service.price)}</div>
+              {service.description && <p className="service-description">{service.description}</p>}
             </div>
           )}
 
@@ -731,6 +750,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                   </div>
                   <div><Clock size={14} /> {service2.duration} minutos</div>
                   <div><CircleDollarSign size={14} /> {formatMoney(service2.price)}</div>
+                  {service2.description && <p className="service-description">{service2.description}</p>}
                 </div>
               )}
             </div>
@@ -912,7 +932,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
 /* ---------------------------------------------------------------------- */
 
 function MisTurnos({ services, employees, appointments, setAppointments, notify }) {
-  const [phoneInput, setPhoneInput] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [searched, setSearched] = useState(false);
   const [rescheduleId, setRescheduleId] = useState(null);
 
@@ -920,13 +940,26 @@ function MisTurnos({ services, employees, appointments, setAppointments, notify 
 
   const myAppts = useMemo(() => {
     if (!searched) return [];
-    const digits = normalize(phoneInput);
-    if (!digits) return [];
-    return appointments
-      .filter((a) => normalize(a.clientPhone) === digits && a.status !== "cancelado" && a.date >= todayStr())
-      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    const digits = normalize(searchInput);
+    const nameLower = searchInput.trim().toLowerCase();
+    if (digits.length < 6 && nameLower.length < 3) return [];
+    return appointments.filter((a) => {
+      const phoneMatch = digits.length >= 6 && normalize(a.clientPhone) === digits;
+      const nameMatch = nameLower.length >= 3 && a.clientName.toLowerCase().includes(nameLower);
+      return phoneMatch || nameMatch;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointments, searched]);
+
+  const today = todayStr();
+  const upcoming = myAppts
+    .filter((a) => a.status !== "cancelado" && a.status !== "completado" && a.date >= today)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const past = myAppts
+    .filter((a) => a.status === "completado" || a.status === "cancelado" || a.date < today)
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+  const completedCount = myAppts.filter((a) => a.status === "completado").length;
 
   const cancelAppt = (appt) => {
     if (appt.comboId) {
@@ -940,56 +973,110 @@ function MisTurnos({ services, employees, appointments, setAppointments, notify 
   return (
     <div className="booking-wizard">
       <div className="card">
-        <h3>Buscá tu turno</h3>
-        <p className="muted small">Ingresá el teléfono con el que reservaste para ver, cancelar o reprogramar tu turno.</p>
+        <h3>Buscá tus turnos</h3>
+        <p className="muted small">Escribí tu nombre o tu teléfono, lo que te resulte más fácil.</p>
         <div className="form-stack">
           <input
             className="text-input"
-            value={phoneInput}
-            onChange={(e) => { setPhoneInput(e.target.value); setSearched(false); }}
-            placeholder="Tu teléfono"
+            value={searchInput}
+            onChange={(e) => { setSearchInput(e.target.value); setSearched(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && searchInput.trim()) setSearched(true); }}
+            placeholder="Tu nombre o tu teléfono"
           />
-          <button className="btn btn-primary" disabled={!phoneInput.trim()} onClick={() => setSearched(true)}>
+          <button className="btn btn-primary" disabled={!searchInput.trim()} onClick={() => setSearched(true)}>
             Buscar
           </button>
         </div>
 
-        {searched && (
-          myAppts.length === 0 ? (
-            <div style={{ marginTop: 10 }}>
-              <EmptyState icon={Calendar} title="No encontramos turnos" hint="Revisá que sea el mismo teléfono que usaste al reservar." />
-            </div>
-          ) : (
-            <div className="appt-list" style={{ marginTop: 16 }}>
-              {myAppts.map((appt) => (
-                <MyApptCard
-                  key={appt.id}
-                  appt={appt}
-                  services={services}
-                  employees={employees}
-                  appointments={appointments}
-                  onCancel={() => cancelAppt(appt)}
-                  isRescheduling={rescheduleId === appt.id}
-                  onStartReschedule={() => setRescheduleId(appt.id)}
-                  onCancelReschedule={() => setRescheduleId(null)}
-                  onConfirmReschedule={(date, time) => {
-                    setAppointments(appointments.map((a) =>
-                      a.id === appt.id ? { ...a, date, time, status: "pendiente", reminderSent: false } : a
-                    ));
-                    setRescheduleId(null);
-                    notify("Turno reprogramado");
-                  }}
-                />
-              ))}
-            </div>
-          )
+        {searched && myAppts.length === 0 && (
+          <div style={{ marginTop: 10 }}>
+            <EmptyState icon={Calendar} title="No encontramos turnos" hint="Revisá que sea el mismo nombre o teléfono que usaste al reservar." />
+          </div>
         )}
       </div>
+
+      {searched && myAppts.length > 0 && (
+        <>
+          <LoyaltyCard completedCount={completedCount} />
+
+          {upcoming.length > 0 && (
+            <>
+              <h3 style={{ margin: "20px 0 10px" }}>Próximos turnos</h3>
+              <div className="appt-list">
+                {upcoming.map((appt) => (
+                  <MyApptCard
+                    key={appt.id}
+                    appt={appt}
+                    services={services}
+                    employees={employees}
+                    appointments={appointments}
+                    onCancel={() => cancelAppt(appt)}
+                    isRescheduling={rescheduleId === appt.id}
+                    onStartReschedule={() => setRescheduleId(appt.id)}
+                    onCancelReschedule={() => setRescheduleId(null)}
+                    onConfirmReschedule={(date, time) => {
+                      setAppointments(appointments.map((a) =>
+                        a.id === appt.id ? { ...a, date, time, status: "pendiente", reminderSent: false } : a
+                      ));
+                      setRescheduleId(null);
+                      notify("Turno reprogramado");
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {past.length > 0 && (
+            <>
+              <h3 style={{ margin: "20px 0 10px" }}>Historial</h3>
+              <div className="appt-list">
+                {past.map((appt) => (
+                  <MyApptCard key={appt.id} appt={appt} services={services} employees={employees} appointments={appointments} readOnly />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function MyApptCard({ appt, services, employees, appointments, onCancel, isRescheduling, onStartReschedule, onCancelReschedule, onConfirmReschedule }) {
+function LoyaltyCard({ completedCount }) {
+  const filled = completedCount === 0 ? 0 : (completedCount % 10 === 0 ? 10 : completedCount % 10);
+  const rewardsEarned = Math.floor(completedCount / 10);
+  const justCompleted = completedCount > 0 && completedCount % 10 === 0;
+
+  return (
+    <div className="card loyalty-card">
+      <div className="tab-header-row" style={{ marginBottom: 8 }}>
+        <h4 style={{ margin: 0 }}>Tarjeta de fidelidad</h4>
+        {rewardsEarned > 0 && (
+          <span className="admin-badge">
+            {rewardsEarned} turno{rewardsEarned > 1 ? "s" : ""} gratis ganado{rewardsEarned > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      <div className="loyalty-grid">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className={`loyalty-stamp ${i < filled ? "filled" : ""}`}>
+            {i < filled ? <Sparkles size={16} /> : <span>{i + 1}</span>}
+          </div>
+        ))}
+      </div>
+      {justCompleted ? (
+        <p className="loyalty-message loyalty-complete">🎉 ¡Completaste tu tarjeta! Mencionalo en tu próxima visita para tu turno gratis.</p>
+      ) : (
+        <p className="loyalty-message">
+          Te falta{10 - filled !== 1 ? "n" : ""} {10 - filled} turno{10 - filled !== 1 ? "s" : ""} realizado{10 - filled !== 1 ? "s" : ""} para tu turno gratis.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MyApptCard({ appt, services, employees, appointments, onCancel, isRescheduling, onStartReschedule, onCancelReschedule, onConfirmReschedule, readOnly }) {
   const svc = services.find((s) => s.id === appt.serviceId);
   const emp = employees.find((e) => e.id === appt.employeeId);
   const cat = svc ? categoryById(svc.categoryId) : null;
@@ -1017,7 +1104,7 @@ function MyApptCard({ appt, services, employees, appointments, onCancel, isResch
         {emp ? emp.name : "Sin asignar"} · {formatDateHuman(appt.date)} · {appt.time} hs
       </div>
 
-      {!isRescheduling && !confirmingCancel && (
+      {!readOnly && !isRescheduling && !confirmingCancel && (
         <div className="finance-actions">
           {!appt.comboId && <button className="btn btn-tiny" onClick={onStartReschedule}>Reprogramar</button>}
           <button className="btn btn-tiny btn-ghost" onClick={() => setConfirmingCancel(true)}>Cancelar turno</button>
@@ -1071,20 +1158,35 @@ function MyApptCard({ appt, services, employees, appointments, onCancel, isResch
 /* ---------------------------------------------------------------------- */
 
 function PanelAdmin(props) {
-  const { tab, setTab, role } = props;
-  const allTabs = [
+  const { tab, setTab, session, employees } = props;
+  const role = session.role;
+  const employeeId = session.employeeId;
+  const me = employeeId ? employees.find((e) => e.id === employeeId) : null;
+
+  const adminTabs = [
     { id: "turnos", label: "Turnos", icon: Calendar },
     { id: "finanzas", label: "Finanzas", icon: Wallet },
     { id: "equipo", label: "Servicios y equipo", icon: Users },
     { id: "productos", label: "Productos", icon: Package },
     { id: "ajustes", label: "Ajustes", icon: Settings },
   ];
-  const tabs = role === "admin" ? allTabs : allTabs.filter((t) => t.id === "turnos");
-  const activeTab = tabs.some((t) => t.id === tab) ? tab : "turnos";
+  const staffTabs = [
+    { id: "miagenda", label: "Mi agenda", icon: Calendar },
+    { id: "misingresos", label: "Mis ingresos", icon: Wallet },
+  ];
+  const tabs = role === "admin" ? adminTabs : staffTabs;
+  const defaultTab = role === "admin" ? "turnos" : "miagenda";
+  const activeTab = tabs.some((t) => t.id === tab) ? tab : defaultTab;
 
   return (
     <div className="panel-shell">
       <nav className="tab-rail">
+        {me && (
+          <div className="tab-rail-me">
+            <Avatar name={me.name} color={me.color} size={26} />
+            <span>{me.name}</span>
+          </div>
+        )}
         {tabs.map((t) => (
           <button key={t.id} className={`tab-btn ${activeTab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)}>
             <t.icon size={16} /> <span>{t.label}</span>
@@ -1093,11 +1195,13 @@ function PanelAdmin(props) {
         {role === "staff" && <span className="role-badge">Acceso de empleada</span>}
       </nav>
       <div className="panel-content">
-        {activeTab === "turnos" && <TurnosTab {...props} />}
+        {activeTab === "turnos" && role === "admin" && <TurnosTab {...props} />}
         {activeTab === "finanzas" && role === "admin" && <FinanzasTab {...props} />}
         {activeTab === "equipo" && role === "admin" && <EquipoTab {...props} />}
         {activeTab === "productos" && role === "admin" && <ProductosTab {...props} />}
         {activeTab === "ajustes" && role === "admin" && <AjustesTab {...props} />}
+        {activeTab === "miagenda" && role === "staff" && <TurnosTab {...props} restrictToEmployeeId={employeeId} />}
+        {activeTab === "misingresos" && role === "staff" && <MisIngresosEmpleada {...props} employeeId={employeeId} />}
       </div>
     </div>
   );
@@ -1105,15 +1209,17 @@ function PanelAdmin(props) {
 
 /* --------------------------- Turnos tab --------------------------- */
 
-function TurnosTab({ services, employees, appointments, setAppointments, transactions, setTransactions, settings, notify }) {
+function TurnosTab({ services, employees, appointments, setAppointments, transactions, setTransactions, settings, restrictToEmployeeId, notify }) {
   const [date, setDate] = useState(todayStr());
-  const [employeeFilter, setEmployeeFilter] = useState("todas");
+  const [employeeFilter, setEmployeeFilter] = useState(restrictToEmployeeId || "todas");
   const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState("lista"); // 'lista' | 'calendario'
   const [detailApptId, setDetailApptId] = useState(null);
 
+  const effectiveFilter = restrictToEmployeeId || employeeFilter;
+
   const dayAppts = appointments
-    .filter((a) => a.date === date && (employeeFilter === "todas" || a.employeeId === employeeFilter))
+    .filter((a) => a.date === date && (effectiveFilter === "todas" || a.employeeId === effectiveFilter))
     .sort((a, b) => a.time.localeCompare(b.time));
 
   const counts = dayAppts.reduce((acc, a) => { acc[a.status] = (acc[a.status] || 0) + 1; return acc; }, {});
@@ -1222,10 +1328,12 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
         </div>
         <button className="icon-btn" onClick={() => setDate(addDays(date, 1))}><ChevronRight size={18} /></button>
         <input className="date-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <select className="select-input" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
-          <option value="todas">Todas las profesionales</option>
-          {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-        </select>
+        {!restrictToEmployeeId && (
+          <select className="select-input" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
+            <option value="todas">Todas las profesionales</option>
+            {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+        )}
         <div className="view-toggle" style={{ marginLeft: "auto" }}>
           <button className={viewMode === "lista" ? "toggle-btn active" : "toggle-btn"} onClick={() => setViewMode("lista")}>Lista</button>
           <button className={viewMode === "calendario" ? "toggle-btn active" : "toggle-btn"} onClick={() => setViewMode("calendario")}>Calendario</button>
@@ -1277,7 +1385,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
       ) : (
         <DayCalendar
           appointments={dayAppts}
-          employees={employeeFilter === "todas" ? employees : employees.filter((e) => e.id === employeeFilter)}
+          employees={effectiveFilter === "todas" ? employees : employees.filter((e) => e.id === effectiveFilter)}
           services={services}
           date={date}
           onSelectAppt={(a) => setDetailApptId(a.id)}
@@ -1316,7 +1424,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nuevo turno manual">
         <ManualApptForm
           services={services} employees={employees} appointments={appointments}
-          defaultDate={date}
+          defaultDate={date} restrictToEmployeeId={restrictToEmployeeId}
           onSave={(appt) => {
             setAppointments([...appointments, appt]);
             if (appt.paymentStatus === "completo") registerPaymentComplete(appt);
@@ -1439,9 +1547,9 @@ function DayCalendar({ appointments, employees, services, date, onSelectAppt }) 
   );
 }
 
-function ManualApptForm({ services, employees, appointments, defaultDate, onSave }) {
+function ManualApptForm({ services, employees, appointments, defaultDate, restrictToEmployeeId, onSave }) {
   const [serviceId, setServiceId] = useState(services[0]?.id || "");
-  const [employeeId, setEmployeeId] = useState("");
+  const [employeeId, setEmployeeId] = useState(restrictToEmployeeId || "");
   const [date, setDate] = useState(defaultDate);
   const [time, setTime] = useState("");
   const [clientName, setClientName] = useState("");
@@ -1462,7 +1570,10 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
   return (
     <div className="form-stack">
       <label className="field-label">Servicio</label>
-      <select className="select-input" value={serviceId} onChange={(e) => { setServiceId(e.target.value); setEmployeeId(""); setTime(""); }}>
+      <select
+        className="select-input" value={serviceId}
+        onChange={(e) => { setServiceId(e.target.value); if (!restrictToEmployeeId) setEmployeeId(""); setTime(""); }}
+      >
         {CATEGORIES.map((cat) => {
           const list = services.filter((s) => s.categoryId === cat.id);
           if (list.length === 0) return null;
@@ -1474,11 +1585,25 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
         })}
       </select>
 
-      <label className="field-label">Profesional</label>
-      <select className="select-input" value={employeeId} onChange={(e) => { setEmployeeId(e.target.value); setTime(""); }}>
-        <option value="">Elegí una profesional</option>
-        {eligible.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-      </select>
+      {restrictToEmployeeId ? (
+        <>
+          <label className="field-label">Profesional</label>
+          <div className="summary-box" style={{ margin: "2px 0 0" }}>
+            <div><Avatar name={employee?.name || "?"} color={employee?.color || "#948A7C"} size={18} /> {employee?.name}</div>
+          </div>
+          {employee && !employee.serviceIds?.includes(serviceId) && (
+            <span className="pin-error">No realizás este servicio — elegí otro.</span>
+          )}
+        </>
+      ) : (
+        <>
+          <label className="field-label">Profesional</label>
+          <select className="select-input" value={employeeId} onChange={(e) => { setEmployeeId(e.target.value); setTime(""); }}>
+            <option value="">Elegí una profesional</option>
+            {eligible.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+        </>
+      )}
 
       <label className="field-label">Fecha</label>
       <input className="date-input" type="date" value={date} onChange={(e) => { setDate(e.target.value); setTime(""); }} />
@@ -1527,6 +1652,108 @@ function ManualApptForm({ services, employees, appointments, defaultDate, onSave
 }
 
 /* --------------------------- Finanzas tab --------------------------- */
+
+function MisIngresosEmpleada({ employeeId, employees, transactions }) {
+  const [period, setPeriod] = useState("mes");
+  const [customStart, setCustomStart] = useState(addDays(todayStr(), -7));
+  const [customEnd, setCustomEnd] = useState(todayStr());
+
+  const me = employees.find((e) => e.id === employeeId);
+
+  const range = useMemo(() => {
+    const today = todayStr();
+    if (period === "hoy") return [today, today];
+    if (period === "semana") return [addDays(today, -6), today];
+    if (period === "mes") {
+      const d = new Date();
+      const first = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+      return [first, today];
+    }
+    return [customStart, customEnd];
+  }, [period, customStart, customEnd]);
+
+  const myTx = transactions.filter(
+    (t) => t.type === "ingreso_servicio" && t.employeeId === employeeId && t.date >= range[0] && t.date <= range[1]
+  );
+  const total = myTx.reduce((s, t) => s + t.amount, 0);
+
+  const byCategory = CATEGORIES.map((c) => ({
+    name: c.name, color: c.color,
+    value: myTx.filter((t) => t.categoryId === c.id).reduce((s, t) => s + t.amount, 0),
+  })).filter((c) => c.value > 0);
+
+  return (
+    <div>
+      <div className="tab-header-row">
+        <h2>Mis ingresos{me ? ` — ${me.name}` : ""}</h2>
+      </div>
+      <p className="muted small" style={{ marginTop: -8 }}>
+        Esto es lo que generaste vos con tus turnos cobrados. No incluye a las demás profesionales ni los
+        gastos del local.
+      </p>
+
+      <div className="period-row">
+        {["hoy", "semana", "mes", "rango"].map((p) => (
+          <button key={p} className={`toggle-btn ${period === p ? "active" : ""}`} onClick={() => setPeriod(p)}>
+            {p === "hoy" ? "Hoy" : p === "semana" ? "Últimos 7 días" : p === "mes" ? "Este mes" : "Rango"}
+          </button>
+        ))}
+        {period === "rango" && (
+          <>
+            <input className="date-input" type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
+            <span className="muted">a</span>
+            <input className="date-input" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
+          </>
+        )}
+      </div>
+
+      <div className="kpi-row">
+        <div className="kpi-card kpi-highlight">
+          <span className="kpi-label"><TrendingUp size={14} /> Generaste</span>
+          <span className="kpi-value kpi-positive">{formatMoney(total)}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label"><CalendarCheck size={14} /> Turnos cobrados</span>
+          <span className="kpi-value">{myTx.length}</span>
+        </div>
+      </div>
+
+      {byCategory.length > 0 && (
+        <div className="card chart-card">
+          <h4>Por categoría de servicio</h4>
+          <ResponsiveContainer width="100%" height={Math.max(120, byCategory.length * 44)}>
+            <BarChart data={byCategory} layout="vertical" margin={{ left: 10, right: 20 }}>
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="name" width={110} tick={{ fill: "var(--ink)", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v) => formatMoney(v)} contentStyle={{ background: "#FFFFFF", border: "1px solid #E6DFD4", borderRadius: 8, color: "#3A3530" }} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                {byCategory.map((c, i) => <Cell key={i} fill={c.color} />)}
+                <LabelList dataKey="value" position="right" formatter={(v) => formatMoney(v)} fill="#3A3530" fontSize={11} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <div className="card">
+        <h4>Detalle</h4>
+        {myTx.length === 0 ? (
+          <EmptyState icon={CircleDollarSign} title="Sin ingresos en este período" hint="Cuando completes y cobres un turno, va a aparecer acá." />
+        ) : (
+          <div className="tx-table">
+            {[...myTx].sort((a, b) => b.date.localeCompare(a.date)).map((t) => (
+              <div key={t.id} className="tx-row">
+                <span className="tx-date">{formatDateHuman(t.date)}</span>
+                <span className="tx-desc">{t.description}</span>
+                <span className="tx-amount kpi-positive">+{formatMoney(t.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function FinanzasTab({ products, setProducts, transactions, setTransactions, employees, services, appointments, fixedExpenses, setFixedExpenses, notify }) {
   const [period, setPeriod] = useState("mes");
@@ -2192,6 +2419,7 @@ function ServiceForm({ initial, onSave }) {
   const [categoryId, setCategoryId] = useState(initial?.categoryId || CATEGORIES[0].id);
   const [duration, setDuration] = useState(initial?.duration || 30);
   const [price, setPrice] = useState(initial?.price || "");
+  const [description, setDescription] = useState(initial?.description || "");
   return (
     <div className="form-stack">
       <label className="field-label">Nombre del servicio</label>
@@ -2204,10 +2432,16 @@ function ServiceForm({ initial, onSave }) {
       <input className="text-input" type="number" min="5" step="5" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
       <label className="field-label">Precio</label>
       <input className="text-input" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+      <label className="field-label">Descripción breve (la ve la clienta al elegir el servicio)</label>
+      <textarea
+        className="text-input" rows={3} style={{ resize: "vertical", fontFamily: "inherit" }}
+        value={description} onChange={(e) => setDescription(e.target.value)}
+        placeholder="Ej: Limpieza en profundidad de poros para una piel renovada."
+      />
       <button
         className="btn btn-primary"
         disabled={!name.trim() || !price || Number(price) < 0}
-        onClick={() => onSave({ name: name.trim(), categoryId, duration: Number(duration), price: Number(price) })}
+        onClick={() => onSave({ name: name.trim(), categoryId, duration: Number(duration), price: Number(price), description: description.trim() })}
       >
         Guardar servicio
       </button>
@@ -2221,6 +2455,7 @@ function EmployeeForm({ services, initial, onSave }) {
   const [serviceIds, setServiceIds] = useState(initial?.serviceIds || []);
   const [isAdmin, setIsAdmin] = useState(initial?.isAdmin || false);
   const [paymentLink, setPaymentLink] = useState(initial?.paymentLink || "");
+  const [pin, setPin] = useState(initial?.pin || "");
   const [timeOff, setTimeOff] = useState(initial?.timeOff || []);
   const [toStart, setToStart] = useState(todayStr());
   const [toEnd, setToEnd] = useState(todayStr());
@@ -2314,10 +2549,21 @@ function EmployeeForm({ services, initial, onSave }) {
         Rol de administradora (acceso completo al panel, incluida Finanzas)
       </label>
 
+      <label className="field-label" style={{ marginTop: 8 }}>PIN personal para ingresar al panel</label>
+      <input
+        className="text-input" value={pin} maxLength={8}
+        onChange={(e) => setPin(e.target.value)}
+        placeholder="Ej: 4821"
+      />
+      <span className="muted small">
+        Con este PIN y su nombre, esta persona entra a su propio panel. Si es administradora, ve todo;
+        si no, solo ve su propia agenda y sus propios ingresos.
+      </span>
+
       <button
         className="btn btn-primary"
         disabled={!name.trim()}
-        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin, paymentLink: paymentLink.trim(), timeOff })}
+        onClick={() => onSave({ name: name.trim(), color, serviceIds, isAdmin, paymentLink: paymentLink.trim(), timeOff, pin: pin.trim() })}
       >
         Guardar profesional
       </button>
@@ -2402,7 +2648,6 @@ function ProductForm({ initial, onSave }) {
 
 function AjustesTab({ settings, setSettings, gallery, setGallery, notify }) {
   const [adminPin, setAdminPin] = useState(settings.adminPin || settings.pin || "1234");
-  const [staffPin, setStaffPin] = useState(settings.staffPin || "0000");
   const [paymentLink, setPaymentLink] = useState(settings.paymentLink || "");
   const [depositNote, setDepositNote] = useState(settings.depositNote || "");
   const [uploading, setUploading] = useState(false);
@@ -2440,21 +2685,20 @@ function AjustesTab({ settings, setSettings, gallery, setGallery, notify }) {
   return (
     <div className="card" style={{ maxWidth: 420 }}>
       <h4>Ajustes del panel</h4>
-      <label className="field-label">PIN de administradora (acceso completo)</label>
+      <label className="field-label">PIN maestro (administración general)</label>
       <input className="text-input" value={adminPin} onChange={(e) => setAdminPin(e.target.value)} maxLength={8} />
-      <label className="field-label">PIN de empleada (solo agenda de turnos)</label>
-      <input className="text-input" value={staffPin} onChange={(e) => setStaffPin(e.target.value)} maxLength={8} />
       <button
         className="btn btn-primary"
         style={{ marginTop: 10 }}
-        onClick={() => { setSettings({ ...settings, adminPin, staffPin }); notify("PINs actualizados"); }}
+        onClick={() => { setSettings({ ...settings, adminPin }); notify("PIN actualizado"); }}
       >
-        Guardar PINs
+        Guardar PIN
       </button>
       <p className="muted small" style={{ marginTop: 14 }}>
-        Quien entre con el PIN de administradora ve turnos, finanzas, equipo, productos y ajustes.
-        Quien entre con el PIN de empleada solo ve y gestiona la agenda de turnos. Es una traba simple,
-        no reemplaza un sistema de usuarios con contraseñas individuales.
+        Este PIN es un acceso general de respaldo (para vos, la dueña). Cada profesional ahora tiene su
+        propio nombre y PIN personal, configurable en <strong>Servicios y equipo</strong>, editando a cada
+        una: si la marcás como administradora, ve todo igual que con este PIN; si no, solo ve su propia
+        agenda ("Mi agenda") y sus propios ingresos ("Mis ingresos").
       </p>
 
       <hr className="settings-divider" />
@@ -2743,6 +2987,7 @@ function GlobalStyle() {
         font-size: 13.5px; animation: fadeSlideIn 0.3s var(--ease) both;
       }
       .summary-box div { display: flex; align-items: center; gap: 8px; }
+      .service-description { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 
       /* Panel */
       .panel-shell { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
@@ -2755,6 +3000,10 @@ function GlobalStyle() {
       .tab-btn.active { background: var(--surface-2); color: var(--ink); }
       .tab-btn:hover:not(.active) { background: #F2EEE7; }
       .panel-content { flex: 1; min-width: 280px; }
+      .tab-rail-me {
+        display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
+        border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600;
+      }
       .role-badge {
         margin-top: 6px; font-size: 10.5px; text-align: center; color: var(--muted); border: 1px dashed var(--border);
         border-radius: 8px; padding: 6px 8px;
@@ -2806,6 +3055,21 @@ function GlobalStyle() {
         font-size: 10px; color: var(--clay); border: 1px solid var(--clay); border-radius: 999px;
         padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.4px;
       }
+
+      .loyalty-card { background: linear-gradient(135deg, var(--surface) 60%, #F2EEE7); }
+      .loyalty-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 10px 0; }
+      .loyalty-stamp {
+        aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed var(--border); display: flex;
+        align-items: center; justify-content: center; color: var(--muted); font-size: 13px;
+        font-family: 'IBM Plex Mono', monospace; transition: all 0.25s var(--ease);
+      }
+      .loyalty-stamp.filled {
+        border: 1.5px solid var(--sage); background: var(--sage); color: #FFFFFF;
+        animation: fadeSlideIn 0.4s var(--ease) both;
+      }
+      .loyalty-message { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+      .loyalty-message.loyalty-complete { color: var(--sage); font-weight: 600; }
+
       .appt-sub-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
       .appt-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
