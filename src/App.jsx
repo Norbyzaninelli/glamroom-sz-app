@@ -62,8 +62,8 @@ const SEED_SERVICES = [
   { name: "Auto-bronceado", categoryId: "corporal", duration: 30, price: 0, description: "Aplicación de bronceado sin sol, de efecto natural y progresivo." },
   { name: "Depilación láser", categoryId: "corporal", duration: 30, price: 0, description: "Depilación con tecnología láser para reducción del vello a largo plazo." },
   // Social
-  { name: "Maquillaje social", categoryId: "social", duration: 60, price: 0, description: "Maquillaje profesional para eventos y ocasiones especiales." },
-  { name: "Maquillaje social y peinado", categoryId: "social", duration: 90, price: 0, description: "Maquillaje y peinado profesional para eventos especiales." },
+  { name: "Maquillaje social", categoryId: "social", duration: 60, price: 0, description: "Maquillaje profesional para eventos y ocasiones especiales.", variablePrice: true },
+  { name: "Maquillaje social y peinado", categoryId: "social", duration: 90, price: 0, description: "Maquillaje y peinado profesional para eventos especiales.", variablePrice: true },
   { name: "Glitter", categoryId: "social", duration: 15, price: 0, description: "Aplicación de brillos decorativos para looks de fiesta." },
 ];
 
@@ -75,6 +75,7 @@ const SALON_OPEN = 9 * 60;   // 09:00 en minutos
 const SALON_CLOSE = 19 * 60; // 19:00 en minutos
 const SLOT_STEP = 30;
 const BUFFER_MINUTES = 10; // descanso entre un servicio y el siguiente, por profesional
+const RESCHEDULE_LIMIT_HOURS = 24; // desde acá la clienta ya no puede cancelar/reprogramar sola
 
 const STATUS_LABEL = {
   pendiente: "Pendiente",
@@ -460,7 +461,7 @@ function getBusyRanges(appointments, employeeId, date, services, excludeId) {
     .filter((a) => a.employeeId === employeeId && a.date === date && a.status !== "cancelado" && a.id !== excludeId)
     .map((a) => {
       const svc = services.find((s) => s.id === a.serviceId);
-      const dur = svc ? svc.duration : 30;
+      const dur = a.overrideDuration || (svc ? svc.duration : 30);
       const start = hhmmToMinutes(a.time);
       // Sumamos el descanso a ambos lados para garantizar el hueco entre servicios,
       // sin importar el orden en el que se agenden los turnos.
@@ -499,6 +500,11 @@ function generateComboSlots(appointments, employee1Id, duration1, employee2Id, d
 function isEmployeeOnTimeOff(employee, date) {
   if (!employee?.timeOff || !date) return false;
   return employee.timeOff.some((t) => date >= t.start && date <= t.end);
+}
+
+function hoursUntilAppt(appt) {
+  const apptDateTime = new Date(`${appt.date}T${appt.time}:00`);
+  return (apptDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -573,7 +579,9 @@ function ServiceAccordion({ services, selectedId, onSelect, excludeId }) {
                     onClick={() => onSelect(s.id)}
                   >
                     <span>{s.name}</span>
-                    <span className="service-meta"><Clock size={13} /> {s.duration} min · {formatMoney(s.price)}</span>
+                    <span className="service-meta">
+                      <Clock size={13} /> {s.duration} min · {s.variablePrice ? "precio a coordinar" : formatMoney(s.price)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -715,7 +723,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                 {service.name}
               </div>
               <div><Clock size={14} /> {service.duration} minutos</div>
-              <div><CircleDollarSign size={14} /> {formatMoney(service.price)}</div>
+              <div><CircleDollarSign size={14} /> {service.variablePrice ? "Precio a coordinar con el local" : formatMoney(service.price)}</div>
               {service.description && <p className="service-description">{service.description}</p>}
             </div>
           )}
@@ -749,7 +757,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                     {service2.name}
                   </div>
                   <div><Clock size={14} /> {service2.duration} minutos</div>
-                  <div><CircleDollarSign size={14} /> {formatMoney(service2.price)}</div>
+                  <div><CircleDollarSign size={14} /> {service2.variablePrice ? "Precio a coordinar con el local" : formatMoney(service2.price)}</div>
                   {service2.description && <p className="service-description">{service2.description}</p>}
                 </div>
               )}
@@ -877,14 +885,14 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
             <div><Scissors size={14} /> {service.name}</div>
             <div><User size={14} /> {employee.name}</div>
             <div><Calendar size={14} /> {formatDateHuman(date)} · {time} hs</div>
-            <div><CircleDollarSign size={14} /> {formatMoney(service.price)}</div>
+            <div><CircleDollarSign size={14} /> {service.variablePrice ? "Precio a coordinar con el local" : formatMoney(service.price)}</div>
           </div>
           {service2 && (
             <div className="summary-box" style={{ marginTop: 8 }}>
               <div><Scissors size={14} /> {service2.name}</div>
               <div><User size={14} /> {employee2.name}</div>
               <div><Calendar size={14} /> {formatDateHuman(date)} · {time2} hs</div>
-              <div><CircleDollarSign size={14} /> {formatMoney(service2.price)}</div>
+              <div><CircleDollarSign size={14} /> {service2.variablePrice ? "Precio a coordinar con el local" : formatMoney(service2.price)}</div>
             </div>
           )}
           <label className="field-label">Nombre y apellido</label>
@@ -1091,6 +1099,8 @@ function MyApptCard({ appt, services, employees, appointments, onCancel, isResch
   );
 
   const maxDate = addDays(todayStr(), 60);
+  const hoursLeft = hoursUntilAppt(appt);
+  const tooLateToChange = hoursLeft < RESCHEDULE_LIMIT_HOURS;
 
   return (
     <div className="card" style={{ borderLeft: `4px solid ${cat ? cat.color : "#948A7C"}`, marginBottom: 12 }}>
@@ -1104,7 +1114,13 @@ function MyApptCard({ appt, services, employees, appointments, onCancel, isResch
         {emp ? emp.name : "Sin asignar"} · {formatDateHuman(appt.date)} · {appt.time} hs
       </div>
 
-      {!readOnly && !isRescheduling && !confirmingCancel && (
+      {!readOnly && tooLateToChange && !isRescheduling && !confirmingCancel && (
+        <p className="muted small" style={{ margin: 0 }}>
+          Este turno es en menos de {RESCHEDULE_LIMIT_HOURS} hs — para cancelarlo o cambiar el horario, contactá al local directamente.
+        </p>
+      )}
+
+      {!readOnly && !tooLateToChange && !isRescheduling && !confirmingCancel && (
         <div className="finance-actions">
           {!appt.comboId && <button className="btn btn-tiny" onClick={onStartReschedule}>Reprogramar</button>}
           <button className="btn btn-tiny btn-ghost" onClick={() => setConfirmingCancel(true)}>Cancelar turno</button>
@@ -1248,7 +1264,7 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
     const emp = employees.find((e) => e.id === appt.employeeId);
     const tx = {
       id: uid(), type: "ingreso_servicio", date: appt.date,
-      amount: svc ? svc.price : 0,
+      amount: appt.overridePrice != null ? appt.overridePrice : (svc ? svc.price : 0),
       description: svc ? svc.name : "Servicio",
       categoryId: svc ? svc.categoryId : null,
       serviceId: appt.serviceId,
@@ -1288,10 +1304,22 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
   const PAYMENT_ORDER = ["pendiente", "sena", "completo"];
   const PAYMENT_LABEL = { pendiente: "Sin pagar", sena: "Seña pagada", completo: "Pago completo" };
 
+  const [priceModalAppt, setPriceModalAppt] = useState(null);
+  const [priceModalValue, setPriceModalValue] = useState("");
+
   const cyclePaymentStatus = (appt) => {
     const current = appt.paymentStatus || "pendiente";
     const nextIndex = (PAYMENT_ORDER.indexOf(current) + 1) % PAYMENT_ORDER.length;
     const next = PAYMENT_ORDER[nextIndex];
+
+    if (next === "completo") {
+      const svc = services.find((s) => s.id === appt.serviceId);
+      if (svc?.variablePrice && appt.overridePrice == null) {
+        setPriceModalAppt(appt);
+        setPriceModalValue(svc.price ? String(svc.price) : "");
+        return;
+      }
+    }
 
     setAppointments(appointments.map((a) => (a.id === appt.id ? { ...a, paymentStatus: next } : a)));
 
@@ -1304,6 +1332,16 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
     } else {
       notify(`Pago: ${PAYMENT_LABEL[next]}`);
     }
+  };
+
+  const confirmVariablePriceAndComplete = () => {
+    const appt = priceModalAppt;
+    const amount = Number(priceModalValue) || 0;
+    const updatedAppt = { ...appt, paymentStatus: "completo", overridePrice: amount };
+    setAppointments(appointments.map((a) => (a.id === appt.id ? updatedAppt : a)));
+    registerPaymentComplete(updatedAppt);
+    notify("Pago completo: ingreso cargado en Finanzas");
+    setPriceModalAppt(null);
   };
 
   return (
@@ -1433,6 +1471,22 @@ function TurnosTab({ services, employees, appointments, setAppointments, transac
           }}
         />
       </Modal>
+
+      <Modal open={!!priceModalAppt} onClose={() => setPriceModalAppt(null)} title="Precio de este servicio">
+        <div className="form-stack">
+          <p className="muted small">
+            Este servicio tiene precio variable. Ingresá el monto final de esta vez para cargarlo en Finanzas.
+          </p>
+          <label className="field-label">Precio</label>
+          <input
+            className="text-input" type="number" min="0" autoFocus
+            value={priceModalValue} onChange={(e) => setPriceModalValue(e.target.value)}
+          />
+          <button className="btn btn-primary" disabled={priceModalValue === ""} onClick={confirmVariablePriceAndComplete}>
+            Confirmar y marcar pago completo
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -1520,7 +1574,7 @@ function DayCalendar({ appointments, employees, services, date, onSelectAppt }) 
                 {!onLeave && empAppts.length === 0 && <span className="day-calendar-empty">Sin turnos</span>}
                 {empAppts.map((a) => {
                   const svc = services.find((s) => s.id === a.serviceId);
-                  const dur = svc ? svc.duration : 30;
+                  const dur = a.overrideDuration || (svc ? svc.duration : 30);
                   const start = hhmmToMinutes(a.time);
                   const top = ((start - SALON_OPEN) / totalMinutes) * 100;
                   const height = (dur / totalMinutes) * 100;
@@ -1555,14 +1609,27 @@ function ManualApptForm({ services, employees, appointments, defaultDate, restri
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("pendiente");
+  const [customDuration, setCustomDuration] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
   const service = services.find((s) => s.id === serviceId);
   const eligible = employees.filter((e) => e.serviceIds?.includes(serviceId));
   const employee = employees.find((e) => e.id === employeeId);
   const employeeOnLeave = isEmployeeOnTimeOff(employee, date);
+
+  useEffect(() => {
+    if (service?.variablePrice) {
+      setCustomDuration(String(service.duration));
+      setCustomPrice(String(service.price || ""));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceId]);
+
+  const effectiveDuration = service?.variablePrice ? (Number(customDuration) || service.duration) : service?.duration;
+
   const slots = useMemo(
-    () => (service && employeeId && !employeeOnLeave ? generateSlots(appointments, employeeId, date, service.duration, services) : []),
-    [appointments, employeeId, date, service, services, employeeOnLeave]
+    () => (service && employeeId && effectiveDuration && !employeeOnLeave ? generateSlots(appointments, employeeId, date, effectiveDuration, services) : []),
+    [appointments, employeeId, date, service, services, employeeOnLeave, effectiveDuration]
   );
 
   if (services.length === 0) return <EmptyState icon={Scissors} title="No hay servicios" hint="Cargá servicios en la pestaña Servicios y equipo." />;
@@ -1608,6 +1675,25 @@ function ManualApptForm({ services, employees, appointments, defaultDate, restri
       <label className="field-label">Fecha</label>
       <input className="date-input" type="date" value={date} onChange={(e) => { setDate(e.target.value); setTime(""); }} />
 
+      {service?.variablePrice && (
+        <div className="two-col" style={{ gap: 10 }}>
+          <div>
+            <label className="field-label">Duración esta vez (min)</label>
+            <input
+              className="text-input" type="number" min="5" step="5"
+              value={customDuration} onChange={(e) => { setCustomDuration(e.target.value); setTime(""); }}
+            />
+          </div>
+          <div>
+            <label className="field-label">Precio esta vez</label>
+            <input
+              className="text-input" type="number" min="0"
+              value={customPrice} onChange={(e) => setCustomPrice(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       {employeeId && (
         <>
           <label className="field-label">Horario</label>
@@ -1643,6 +1729,8 @@ function ManualApptForm({ services, employees, appointments, defaultDate, restri
           id: uid(), serviceId, employeeId, date, time,
           clientName: clientName.trim(), clientPhone: clientPhone.trim(),
           status: "confirmado", paymentStatus, notes: "", reminderSent: false, createdAt: Date.now(),
+          overrideDuration: service?.variablePrice ? Number(customDuration) || undefined : undefined,
+          overridePrice: service?.variablePrice ? Number(customPrice) || 0 : undefined,
         })}
       >
         Guardar turno
@@ -2420,6 +2508,7 @@ function ServiceForm({ initial, onSave }) {
   const [duration, setDuration] = useState(initial?.duration || 30);
   const [price, setPrice] = useState(initial?.price || "");
   const [description, setDescription] = useState(initial?.description || "");
+  const [variablePrice, setVariablePrice] = useState(initial?.variablePrice || false);
   return (
     <div className="form-stack">
       <label className="field-label">Nombre del servicio</label>
@@ -2430,8 +2519,19 @@ function ServiceForm({ initial, onSave }) {
       </select>
       <label className="field-label">Duración (minutos)</label>
       <input className="text-input" type="number" min="5" step="5" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
-      <label className="field-label">Precio</label>
+      <label className="field-label">Precio {variablePrice ? "de referencia" : ""}</label>
       <input className="text-input" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
+      <label className="checkbox-row">
+        <input type="checkbox" checked={variablePrice} onChange={(e) => setVariablePrice(e.target.checked)} />
+        Precio y duración variables (se definen en cada turno, ej. maquillaje o peinado)
+      </label>
+      {variablePrice && (
+        <span className="muted small">
+          Al cargar un turno manual de este servicio, la profesional va a poder ajustar la duración y el
+          precio para esa vez puntual. En la reserva online de la clienta se va a mostrar "precio a
+          coordinar con el local" en vez de un monto fijo.
+        </span>
+      )}
       <label className="field-label">Descripción breve (la ve la clienta al elegir el servicio)</label>
       <textarea
         className="text-input" rows={3} style={{ resize: "vertical", fontFamily: "inherit" }}
@@ -2441,7 +2541,7 @@ function ServiceForm({ initial, onSave }) {
       <button
         className="btn btn-primary"
         disabled={!name.trim() || !price || Number(price) < 0}
-        onClick={() => onSave({ name: name.trim(), categoryId, duration: Number(duration), price: Number(price), description: description.trim() })}
+        onClick={() => onSave({ name: name.trim(), categoryId, duration: Number(duration), price: Number(price), description: description.trim(), variablePrice })}
       >
         Guardar servicio
       </button>
