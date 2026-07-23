@@ -3,7 +3,7 @@ import {
   Calendar, Clock, Sparkles, Scissors, Users, Package, Wallet,
   TrendingUp, TrendingDown, Plus, X, Check, Lock, ChevronLeft,
   ChevronRight, ChevronDown, Trash2, Pencil, ShoppingBag, User, Settings,
-  AlertCircle, CalendarCheck, CircleDollarSign, MessageCircle, Download
+  AlertCircle, CalendarCheck, CircleDollarSign, MessageCircle, Download, Phone
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LabelList
@@ -696,14 +696,22 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
 
   return (
     <div className="booking-wizard">
+      <div className="booking-hero">
+        <h2>Reservá tu turno</h2>
+        <p>Elegí tu servicio, tu profesional y el horario que más te convenga.</p>
+      </div>
+
       <BulbDivider items={CATEGORIES.map((c) => ({ color: c.color, label: c.name }))} />
 
       <div className="wizard-steps">
         {["Servicio", "Profesional", "Fecha y hora", "Tus datos"].map((label, i) => (
-          <div key={label} className={`wizard-step ${step === i + 1 ? "active" : ""} ${step > i + 1 ? "done" : ""}`}>
-            <span className="wizard-step-num">{i + 1}</span>
-            <span>{label}</span>
-          </div>
+          <React.Fragment key={label}>
+            {i > 0 && <div className={`wizard-connector ${step > i ? "filled" : ""}`} />}
+            <div className={`wizard-step ${step === i + 1 ? "active" : ""} ${step > i + 1 ? "done" : ""}`}>
+              <span className="wizard-step-num">{step > i + 1 ? <Check size={13} /> : i + 1}</span>
+              <span className="wizard-step-label">{label}</span>
+            </div>
+          </React.Fragment>
         ))}
       </div>
 
@@ -790,7 +798,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                   className={`employee-option ${employeeId === e.id ? "selected" : ""}`}
                   onClick={() => { setEmployeeId(e.id); setTime(null); }}
                 >
-                  <Avatar name={e.name} color={e.color} size={38} />
+                  <Avatar name={e.name} color={e.color} size={50} />
                   <span>{e.name}</span>
                 </button>
               ))}
@@ -811,7 +819,7 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
                       className={`employee-option ${employeeId2 === e.id ? "selected" : ""}`}
                       onClick={() => { setEmployeeId2(e.id); setTime(null); }}
                     >
-                      <Avatar name={e.name} color={e.color} size={38} />
+                      <Avatar name={e.name} color={e.color} size={50} />
                       <span>{e.name}</span>
                     </button>
                   ))}
@@ -842,6 +850,21 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
               (con {BUFFER_MINUTES} min de descanso entre medio).
             </p>
           )}
+          <div className="quick-date-row">
+            {[0, 1, 2].map((offset) => {
+              const d = addDays(todayStr(), offset);
+              const label = offset === 0 ? "Hoy" : offset === 1 ? "Mañana" : "Pasado mañana";
+              return (
+                <button
+                  key={offset}
+                  className={`quick-date-btn ${date === d ? "selected" : ""}`}
+                  onClick={() => { setDate(d); setTime(null); }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
           <input
             className="date-input"
             type="date"
@@ -896,9 +919,15 @@ function ClienteBooking({ services, employees, appointments, setAppointments, se
             </div>
           )}
           <label className="field-label">Nombre y apellido</label>
-          <input className="text-input" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Tu nombre" />
+          <div className="input-icon-wrap">
+            <User size={16} className="input-icon" />
+            <input className="text-input has-icon" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Tu nombre" />
+          </div>
           <label className="field-label">Teléfono</label>
-          <input className="text-input" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Tu WhatsApp o celular" />
+          <div className="input-icon-wrap">
+            <Phone size={16} className="input-icon" />
+            <input className="text-input has-icon" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Tu WhatsApp o celular" />
+          </div>
           <div className="wizard-actions">
             <button className="btn btn-ghost" onClick={() => setStep(3)}><ChevronLeft size={16} /> Atrás</button>
             <button
@@ -3011,15 +3040,27 @@ function GlobalStyle() {
 
       /* Wizard (booking) */
       .booking-wizard { max-width: 640px; margin: 0 auto; }
-      .wizard-steps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-      .wizard-step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-      .wizard-step.active { color: var(--ink); }
+      .booking-hero { text-align: center; margin-bottom: 20px; }
+      .booking-hero h2 { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; margin: 0 0 6px; }
+      .booking-hero p { color: var(--muted); font-size: 14px; margin: 0; }
+
+      .wizard-steps { display: flex; align-items: flex-start; margin-bottom: 22px; padding: 0 4px; }
+      .wizard-step { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+      .wizard-step.active { color: var(--ink); font-weight: 600; }
+      .wizard-step.done { color: var(--money-pos); }
+      .wizard-step-label { white-space: nowrap; }
       .wizard-step-num {
-        width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center;
-        justify-content: center; font-size: 11px; border: 1px solid var(--border);
+        width: 26px; height: 26px; border-radius: 50%; background: var(--surface); display: flex; align-items: center;
+        justify-content: center; font-size: 12px; border: 1.5px solid var(--border);
+        transition: all 0.35s var(--ease); font-family: 'IBM Plex Mono', monospace;
       }
-      .wizard-step.active .wizard-step-num { background: var(--sage); color: #FFFFFF; border-color: var(--sage); }
+      .wizard-step.active .wizard-step-num { background: var(--sage); color: #FFFFFF; border-color: var(--sage); box-shadow: 0 0 0 4px rgba(110,145,121,0.16); }
       .wizard-step.done .wizard-step-num { background: var(--money-pos); color: #FFFFFF; border-color: var(--money-pos); }
+      .wizard-connector { flex: 1; height: 2px; background: var(--border); margin: 12px 4px 0; transition: background-color 0.5s var(--ease); }
+      .wizard-connector.filled { background: var(--money-pos); }
+      @media (max-width: 480px) {
+        .wizard-step-label { display: none; }
+      }
       .wizard-actions { display: flex; justify-content: space-between; margin-top: 16px; }
 
       
@@ -3064,16 +3105,18 @@ function GlobalStyle() {
       .service-row .service-meta { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
       .service-row.selected .service-meta { color: var(--sage); opacity: 0.8; }
 
-      .employee-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+      .employee-grid { display: flex; flex-wrap: wrap; gap: 12px; }
       .employee-option {
-        display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--surface-2);
-        border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: var(--ink); cursor: pointer; min-width: 90px;
-        transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+        display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--surface);
+        border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 18px; color: var(--ink); cursor: pointer; min-width: 104px;
+        font-weight: 500; box-shadow: 0 2px 10px rgba(58, 53, 48, 0.04);
+        transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
       }
+      .employee-option .avatar { box-shadow: 0 0 0 3px var(--surface), 0 0 0 4.5px var(--avatar-color); }
       .employee-option.selected { border-color: var(--sage); background: #E8EFE9; }
       .employee-option:active { transform: scale(0.97); }
       @media (hover: hover) {
-        .employee-option:hover:not(.selected) { border-color: var(--sage); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(58, 53, 48, 0.08); }
+        .employee-option:hover:not(.selected) { border-color: var(--sage); transform: translateY(-3px); box-shadow: 0 10px 20px rgba(58, 53, 48, 0.1); }
       }
 
       .avatar {
@@ -3090,6 +3133,21 @@ function GlobalStyle() {
       .date-input { width: auto; }
       .service-select { padding: 13px 12px; font-size: 15px; border-radius: 10px; }
       .field-label { font-size: 12px; color: var(--muted); margin: 6px 0 -4px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+      .input-icon-wrap { position: relative; display: flex; align-items: center; }
+      .input-icon { position: absolute; left: 12px; color: var(--muted); pointer-events: none; }
+      .text-input.has-icon { padding-left: 38px; }
+
+      .quick-date-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+      .quick-date-btn {
+        background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 999px;
+        padding: 8px 16px; font-size: 13px; font-family: 'Work Sans', sans-serif; cursor: pointer;
+        transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+      }
+      .quick-date-btn.selected { background: var(--sage); border-color: var(--sage); color: #FFFFFF; }
+      @media (hover: hover) {
+        .quick-date-btn:hover:not(.selected) { border-color: var(--sage); color: var(--sage); }
+      }
 
       .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 8px; }
       .slot-btn {
