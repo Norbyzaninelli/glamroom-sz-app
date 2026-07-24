@@ -316,15 +316,26 @@ export default function App() {
 
       <main className="main-area">
         {view === "cliente" && (
-          <ClienteBooking
-            services={services}
-            employees={employees}
-            appointments={appointments}
-            setAppointments={setAppointments}
-            settings={settings}
-            gallery={gallery}
-            notify={notify}
-          />
+          <div className="booking-page">
+            {gallery.length > 0 && (
+              <div className="booking-side-banner left" style={{ backgroundImage: `url(${gallery[0].url})` }} />
+            )}
+            <ClienteBooking
+              services={services}
+              employees={employees}
+              appointments={appointments}
+              setAppointments={setAppointments}
+              settings={settings}
+              gallery={gallery}
+              notify={notify}
+            />
+            {gallery.length > 0 && (
+              <div
+                className="booking-side-banner right"
+                style={{ backgroundImage: `url(${(gallery[1] || gallery[0]).url})` }}
+              />
+            )}
+          </div>
         )}
 
         {view === "misturnos" && (
@@ -563,7 +574,7 @@ function ServiceAccordion({ services, selectedId, onSelect, excludeId }) {
         const isOpen = openCat === cat.id;
         const hasSelection = list.some((s) => s.id === selectedId);
         return (
-          <div key={cat.id} className={`accordion-item ${hasSelection ? "has-selection" : ""}`}>
+          <div key={cat.id} className={`accordion-item ${hasSelection ? "has-selection" : ""}`} style={{ "--cat-color": cat.color }}>
             <button className="accordion-header" onClick={() => setOpenCat(isOpen ? null : cat.id)}>
               <span className="bulb" style={{ "--bulb-color": cat.color, width: 10, height: 10 }} />
               <span className="accordion-title">{cat.name}</span>
@@ -2315,15 +2326,21 @@ function BreakEvenSection({ services, fixedExpenses, setFixedExpenses, transacti
     notify("Gasto fijo eliminado");
   };
 
+  // Pozo compartido: lo que ya facturaste este mes (de cualquier servicio) reduce
+  // lo que falta cubrir, y eso recalcula cuántos turnos hacen falta de CADA servicio
+  // si tuvieras que cerrar el resto solo con ese. Por eso, si avanzás con un servicio,
+  // el número de los demás baja también — no son objetivos independientes.
+  const monthServiceTx = transactions.filter((t) => t.type === "ingreso_servicio" && t.date >= monthStart);
+  const totalEarnedThisMonth = monthServiceTx.reduce((s, t) => s + t.amount, 0);
+  const remainingToCover = Math.max(0, totalFixed - totalEarnedThisMonth);
+  const coveredPct = totalFixed > 0 ? Math.min(100, Math.round((totalEarnedThisMonth / totalFixed) * 100)) : 0;
+
   const breakEvenRows = services
     .filter((s) => s.price > 0)
     .map((s) => {
-      const needed = totalFixed > 0 ? Math.ceil(totalFixed / s.price) : 0;
-      const done = transactions.filter(
-        (t) => t.type === "ingreso_servicio" && t.serviceId === s.id && t.date >= monthStart
-      ).length;
-      const pct = needed > 0 ? Math.min(100, Math.round((done / needed) * 100)) : 0;
-      return { service: s, needed, done, pct };
+      const needed = remainingToCover > 0 ? Math.ceil(remainingToCover / s.price) : 0;
+      const doneThisMonth = monthServiceTx.filter((t) => t.serviceId === s.id).length;
+      return { service: s, needed, doneThisMonth };
     })
     .sort((a, b) => a.needed - b.needed);
 
@@ -2335,7 +2352,7 @@ function BreakEvenSection({ services, fixedExpenses, setFixedExpenses, transacti
       </div>
       <p className="muted small" style={{ marginTop: -6 }}>
         Cargá acá tus costos que se repiten todos los meses (alquiler, sueldos, servicios) para calcular
-        cuántos turnos de cada servicio necesitás para cubrirlos.
+        cuántos turnos hacen falta para cubrirlos.
       </p>
 
       {fixedExpenses.length === 0 ? (
@@ -2365,18 +2382,39 @@ function BreakEvenSection({ services, fixedExpenses, setFixedExpenses, transacti
             </button>
           </div>
 
-          {breakEvenRows.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div className="tab-header-row" style={{ marginBottom: 6 }}>
+              <span className="muted small">Cubierto este mes</span>
+              <span className="muted small">{formatMoney(totalEarnedThisMonth)} de {formatMoney(totalFixed)} ({coveredPct}%)</span>
+            </div>
+            <div className="breakeven-bar-track" style={{ height: 10 }}>
+              <div className="breakeven-bar-fill" style={{ width: `${coveredPct}%` }} />
+            </div>
+            {remainingToCover > 0 ? (
+              <p className="muted small" style={{ marginTop: 8 }}>
+                Te faltan {formatMoney(remainingToCover)} para cubrir tus gastos fijos de este mes.
+              </p>
+            ) : (
+              <p className="loyalty-message loyalty-complete" style={{ marginTop: 8 }}>
+                🎉 ¡Ya cubriste tus gastos fijos de este mes!
+              </p>
+            )}
+          </div>
+
+          {remainingToCover > 0 && breakEvenRows.length > 0 && (
             <div className="breakeven-table" style={{ marginTop: 16 }}>
+              <p className="muted small" style={{ marginTop: 0, marginBottom: 10 }}>
+                Turnos que necesitarías de cada servicio para cubrir lo que falta, si lo hicieras solo con ese
+                servicio de acá en adelante:
+              </p>
               {breakEvenRows.map((row) => (
-                <div key={row.service.id} className="breakeven-row">
+                <div key={row.service.id} className="breakeven-row-v2">
                   <div className="breakeven-name">
                     <span className="bulb" style={{ "--bulb-color": categoryById(row.service.categoryId)?.color, width: 9, height: 9 }} />
                     {row.service.name}
                   </div>
-                  <div className="breakeven-bar-track">
-                    <div className="breakeven-bar-fill" style={{ width: `${row.pct}%` }} />
-                  </div>
-                  <div className="breakeven-count">{row.done} / {row.needed} turnos</div>
+                  <div className="breakeven-need">{row.needed} turnos</div>
+                  <div className="breakeven-done">{row.doneThisMonth} ya hechos</div>
                 </div>
               ))}
             </div>
@@ -2973,6 +3011,26 @@ function GlobalStyle() {
       .toggle-btn.active { background: var(--sage); color: #FFFFFF; }
 
       .main-area { padding: 20px 22px 60px; max-width: 1100px; margin: 0 auto; }
+      .main-area:has(.booking-page) { max-width: 1520px; }
+
+      .booking-page { display: flex; align-items: stretch; justify-content: center; gap: 26px; }
+      .booking-page .booking-wizard { flex: 0 1 640px; min-width: 0; }
+      .booking-side-banner {
+        display: none; flex: 1 1 0; min-width: 0; max-width: 320px; border-radius: 26px; overflow: hidden;
+        position: relative; background-position: center; background-repeat: no-repeat;
+        background-size: 108%; animation: kenBurns 22s var(--ease) infinite alternate;
+      }
+      .booking-side-banner::after {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(58, 53, 48, 0) 55%, rgba(58, 53, 48, 0.32));
+      }
+      @keyframes kenBurns {
+        from { background-size: 108%; }
+        to { background-size: 122%; }
+      }
+      @media (min-width: 1180px) {
+        .booking-side-banner { display: block; }
+      }
 
       /* Bulb divider (signature motif) */
       .bulb-divider { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 6px 0 22px; }
@@ -3066,20 +3124,25 @@ function GlobalStyle() {
       
       .accordion { display: flex; flex-direction: column; gap: 8px; }
       .accordion-item {
-        background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
-        transition: border-color 0.25s var(--ease);
+        background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden;
+        transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
       }
       .accordion-item.has-selection { border-color: var(--sage); }
+      @media (hover: hover) {
+        .accordion-item:hover { border-color: var(--cat-color); transform: translateY(-3px); box-shadow: 0 10px 22px rgba(58, 53, 48, 0.1); }
+      }
       .accordion-header {
-        width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: none;
+        width: 100%; display: flex; align-items: center; gap: 10px; background: transparent; border: none;
         color: var(--ink); padding: 13px 14px; cursor: pointer; font-family: 'Work Sans', sans-serif; font-size: 14px; text-align: left;
-        transition: background-color 0.2s var(--ease);
+        transition: background-color 0.2s var(--ease), padding-left 0.3s var(--ease);
       }
       .accordion-header:active { background: var(--border); }
       @media (hover: hover) {
-        .accordion-header:hover { background: var(--surface-2); }
-        .accordion-header:hover .accordion-chevron { color: var(--sage); }
+        .accordion-header:hover { background: var(--surface-2); padding-left: 20px; }
+        .accordion-header:hover .accordion-chevron { color: var(--cat-color); transform: translateY(2px); }
+        .accordion-header:hover .bulb { transform: scale(1.35); box-shadow: 0 0 0 5px color-mix(in srgb, var(--cat-color) 22%, transparent); }
       }
+      .bulb { transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }
       .accordion-title { flex: 1; font-weight: 500; }
       .accordion-chevron { color: var(--muted); transition: transform 0.3s var(--ease); flex-shrink: 0; }
       .accordion-chevron.open { transform: rotate(180deg); }
@@ -3383,8 +3446,18 @@ function GlobalStyle() {
       }
       .breakeven-name { display: flex; align-items: center; gap: 6px; font-size: 13px; }
       .breakeven-bar-track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-      .breakeven-bar-fill { height: 100%; background: var(--sage); border-radius: 3px; transition: width 0.3s ease; }
+      .breakeven-bar-fill { height: 100%; background: var(--sage); border-radius: 3px; transition: width 0.4s var(--ease); }
       .breakeven-count { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--muted); text-align: right; white-space: nowrap; }
+
+      .breakeven-row-v2 {
+        display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 8px 10px;
+        margin: 0 -10px; border-radius: 8px; transition: background-color 0.2s var(--ease); font-size: 13px;
+      }
+      @media (hover: hover) {
+        .breakeven-row-v2:hover { background: var(--surface-2); }
+      }
+      .breakeven-need { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--sage); white-space: nowrap; }
+      .breakeven-done { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
       @media (max-width: 480px) {
         .breakeven-row { grid-template-columns: 1fr 70px; }
         .breakeven-count { grid-column: 1 / -1; text-align: left; }
